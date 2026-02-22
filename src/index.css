@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Lotus Life - Serene Natural Palette */
+    --background: 40 20% 98%;
+    --foreground: 220 15% 20%;
+
+    --card: 40 15% 96%;
+    --card-foreground: 220 15% 20%;
+
+    --popover: 40 20% 98%;
+    --popover-foreground: 220 15% 20%;
+
+    --primary: 142 25% 35%;
+    --primary-foreground: 40 20% 98%;
+
+    --secondary: 40 20% 92%;
+    --secondary-foreground: 220 15% 20%;
+
+    --muted: 40 15% 94%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 142 20% 90%;
+    --accent-foreground: 142 25% 25%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 40 15% 88%;
+    --input: 40 15% 88%;
+    --ring: 142 25% 35%;
+
+    --radius: 0.75rem;
+
+    /* Custom Lotus Life tokens */
+    --sage: 142 25% 35%;
+    --sage-light: 142 20% 90%;
+    --sage-dark: 142 30% 25%;
+    --cream: 40 30% 96%;
+    --cream-dark: 40 20% 90%;
+    --charcoal: 220 15% 20%;
+    --charcoal-light: 220 10% 45%;
+    --warm-white: 40 20% 98%;
+    --marble: 220 10% 92%;
+
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'Outfit', sans-serif;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 15% 10%;
+    --foreground: 40 20% 95%;
+
+    --card: 220 15% 12%;
+    --card-foreground: 40 20% 95%;
+
+    --popover: 220 15% 10%;
+    --popover-foreground: 40 20% 95%;
+
+    --primary: 142 25% 45%;
+    --primary-foreground: 220 15% 10%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 40 20% 95%;
+
+    --muted: 220 15% 18%;
+    --muted-foreground: 40 15% 65%;
+
+    --accent: 142 20% 20%;
+    --accent-foreground: 142 25% 75%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 142 25% 45%;
+
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  .text-gradient-sage {
+    background: linear-gradient(135deg, hsl(var(--sage)) 0%, hsl(var(--sage-dark)) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-marble {
+    background: linear-gradient(135deg, hsl(var(--warm-white)) 0%, hsl(var(--marble)) 50%, hsl(var(--cream)) 100%);
+  }
+
+  .bg-sage-gradient {
+    background: linear-gradient(135deg, hsl(var(--sage)) 0%, hsl(var(--sage-dark)) 100%);
+  }
+
+  .shadow-soft {
+    box-shadow: 0 4px 20px -4px hsl(var(--charcoal) / 0.08);
+  }
+
+  .shadow-elevated {
+    box-shadow: 0 10px 40px -10px hsl(var(--charcoal) / 0.12);
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
