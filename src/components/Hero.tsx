@@ -1,18 +1,21 @@
+"use client";
+
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroImage from "@/assets/hero-studio.jpg";
-import logoImage from "@/assets/lotus-life-logo.svg";
 
 const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
       <div className="absolute inset-0">
-        <img 
-          src={heroImage} 
+        <Image 
+          src="/hero-studio.jpg" 
           alt="Lotus Life yoga studio interior" 
-          className="w-full h-full object-cover opacity-60"
+          fill
+          className="object-cover opacity-60"
+          priority
         />
         <div className="absolute inset-0 bg-gradient-to-b from-warm-white/70 via-warm-white/50 to-warm-white/90" />
       </div>
@@ -32,13 +35,15 @@ const Hero = () => {
             transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
             className="mb-8"
           >
-            <motion.img 
-              src={logoImage} 
-              alt="Lotus Life logo" 
-              className="w-48 h-48 md:w-64 md:h-64 object-contain drop-shadow-2xl"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-            />
+            <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }} className="relative w-48 h-48 md:w-64 md:h-64">
+              <Image 
+                src="/lotus-life-logo.svg" 
+                alt="Lotus Life logo" 
+                width={256}
+                height={256}
+                className="w-full h-full object-contain drop-shadow-2xl"
+              />
+            </motion.div>
           </motion.div>
 
           {/* Curved Text - Embrace Your Inner Harmony */}

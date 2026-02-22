@@ -1,8 +1,10 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Phone } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import logoImage from "@/assets/lotus-life-logo.svg";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -38,7 +40,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2 text-charcoal">
-            <img src={logoImage} alt="Lotus Life logo" className="w-12 h-12 object-contain drop-shadow-md" />
+            <Image src="/lotus-life-logo.svg" alt="Lotus Life logo" width={48} height={48} className="object-contain drop-shadow-md" />
             <span className="font-display text-xl font-medium">Lotus Life</span>
           </a>
 
