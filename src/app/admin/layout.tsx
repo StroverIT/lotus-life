@@ -1,8 +1,10 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import Link from "next/link";
+import { Home } from "lucide-react";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { Button } from "@/components/ui/button";
+import { AdminNav } from "./_components/AdminNav";
 
 export const metadata = {
   title: "Admin | Lotus Life",
@@ -32,7 +34,19 @@ export default async function AdminLayout({
   }
   return (
     <div className="min-h-screen bg-marble">
-      {children}
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="font-display text-3xl text-charcoal">Admin</h1>
+          <Button variant="outline" asChild>
+            <Link href="/" className="flex items-center gap-2">
+              <Home className="w-4 h-4" />
+              Home
+            </Link>
+          </Button>
+        </div>
+        <AdminNav />
+        <div className="mt-6">{children}</div>
+      </div>
     </div>
   );
 }
