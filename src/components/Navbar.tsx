@@ -102,30 +102,40 @@ const Navbar = () => {
             ))}
             {status !== "loading" && (
               session ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="font-body text-charcoal hover:bg-sage-light">
-                      <User className="w-4 h-4" />
-                      Account
+                <>
+                  {(session.user as { role?: string }).role === "admin" && (
+                    <Button variant="outline" size="sm" className="font-body text-charcoal border-sage" asChild>
+                      <Link href="/admin" className="flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
+                        Admin panel
+                      </Link>
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="font-body">
-                    <DropdownMenuItem asChild>
-                      <Link href="/panel">Panel</Link>
-                    </DropdownMenuItem>
-                    {(session.user as { role?: string }).role === "admin" && (
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="font-body text-charcoal hover:bg-sage-light">
+                        <User className="w-4 h-4" />
+                        Account
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="font-body">
                       <DropdownMenuItem asChild>
-                        <Link href="/admin" className="flex items-center gap-2">
-                          <Shield className="w-4 h-4" />
-                          Admin
-                        </Link>
+                        <Link href="/panel">Panel</Link>
                       </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onClick={() => signOut()}>
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      {(session.user as { role?: string }).role === "admin" && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin" className="flex items-center gap-2">
+                            <Shield className="w-4 h-4" />
+                            Admin
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => signOut()}>
+                        Sign out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ) : (
                 <Button variant="sage-ghost" size="sm" asChild>
                   <Link href="/auth/signin" className="flex items-center gap-2">
@@ -188,7 +198,7 @@ const Navbar = () => {
                     className="text-charcoal hover:text-sage transition-colors font-body py-2 flex items-center gap-2"
                   >
                     <Shield className="w-4 h-4" />
-                    Admin
+                    Admin panel
                   </Link>
                 )}
                 <button
