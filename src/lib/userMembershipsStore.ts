@@ -1,46 +1,60 @@
 import type { PricingTierId } from "@/lib/pricingStore";
+import { prisma } from "@/lib/db";
 
 export interface UserMembership {
   userId: string;
   tierId: PricingTierId;
-  validFrom?: string; // YYYY-MM-DD
-  validTo?: string; // YYYY-MM-DD
+  validFrom?: string;
+  validTo?: string;
 }
 
-const assignments: UserMembership[] = [];
-
-export function getAllUserMemberships(): UserMembership[] {
-  return assignments.map((a) => ({ ...a }));
+function rowToMembership(row: { userId: string; tierId: string; validFrom: string | null; validTo: string | null }): UserMembership {
+  return {
+    userId: row.userId,
+    tierId: row.tierId,
+    ...(row.validFrom != null && { validFrom: row.validFrom }),
+    ...(row.validTo != null && { validTo: row.validTo }),
+  };
 }
 
-export function getUserMembership(userId: string): UserMembership | undefined {
-  return assignments.find((a) => a.userId === userId) ?? undefined;
+export async function getAllUserMemberships(): Promise<UserMembership[]> {
+  const rows = await prisma.userMembership.findMany();
+  return rows.map(rowToMembership);
 }
 
-export function setUserMembership(data: {
+export async function getUserMembership(userId: string): Promise<UserMembership | undefined> {
+  const row = await prisma.userMembership.findUnique({
+    where: { userId },
+  });
+  return row ? rowToMembership(row) : undefined;
+}
+
+export async function setUserMembership(data: {
   userId: string;
   tierId: PricingTierId;
   validFrom?: string;
   validTo?: string;
-}): UserMembership {
-  const existing = assignments.findIndex((a) => a.userId === data.userId);
-  const entry: UserMembership = {
-    userId: data.userId,
-    tierId: data.tierId,
-    validFrom: data.validFrom,
-    validTo: data.validTo,
-  };
-  if (existing >= 0) {
-    assignments[existing] = entry;
-  } else {
-    assignments.push(entry);
-  }
-  return { ...entry };
+}): Promise<UserMembership> {
+  const row = await prisma.userMembership.upsert({
+    where: { userId: data.userId },
+    create: {
+      userId: data.userId,
+      tierId: data.tierId,
+      validFrom: data.validFrom ?? null,
+      validTo: data.validTo ?? null,
+    },
+    update: {
+      tierId: data.tierId,
+      validFrom: data.validFrom ?? null,
+      validTo: data.validTo ?? null,
+    },
+  });
+  return rowToMembership(row);
 }
 
-export function removeUserMembership(userId: string): boolean {
-  const idx = assignments.findIndex((a) => a.userId === userId);
-  if (idx === -1) return false;
-  assignments.splice(idx, 1);
-  return true;
+export async function removeUserMembership(userId: string): Promise<boolean> {
+  const result = await prisma.userMembership.deleteMany({
+    where: { userId },
+  });
+  return result.count > 0;
 }

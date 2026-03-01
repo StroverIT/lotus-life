@@ -6,17 +6,21 @@ import {
   removeUserMembership,
 } from "@/lib/userMembershipsStore";
 import { getUsers } from "@/lib/usersStore";
-import { getTierById } from "@/lib/pricingStore";
+import { getAllTiers } from "@/lib/pricingStore";
 
 export async function GET() {
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
-  const assignments = getAllUserMemberships();
-  const users = getUsers();
+  const [assignments, users, tiers] = await Promise.all([
+    getAllUserMemberships(),
+    Promise.resolve(getUsers()),
+    getAllTiers(),
+  ]);
   const userMap = new Map(users.map((u) => [u.email, u]));
+  const tierMap = new Map(tiers.map((t) => [t.id, t]));
   const list = assignments.map((a) => {
     const user = userMap.get(a.userId);
-    const tier = getTierById(a.tierId);
+    const tier = tierMap.get(a.tierId);
     return {
       userId: a.userId,
       tierId: a.tierId,
@@ -47,7 +51,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    const assignment = setUserMembership({
+    const assignment = await setUserMembership({
       userId,
       tierId,
       validFrom,
@@ -74,7 +78,7 @@ export async function DELETE(request: NextRequest) {
       { status: 400 }
     );
   }
-  const ok = removeUserMembership(userId);
+  const ok = await removeUserMembership(userId);
   if (!ok) return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

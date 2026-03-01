@@ -1,23 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Check, Gift, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimateIn } from "@/components/AnimateIn";
 import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
-import { PRICING_TIERS, type PricingTierId } from "@/lib/pricing";
+import { type PricingTierId, type PricingTierData } from "@/lib/pricing";
 
-const tierIcons: Record<PricingTierId, React.ReactNode> = {
+const tierIcons: Record<string, React.ReactNode> = {
   essence: <Sparkles className="w-6 h-6" />,
   bloom: <Users className="w-6 h-6" />,
   life: <Gift className="w-6 h-6" />,
 };
 
 const Pricing = () => {
+  const [tiers, setTiers] = useState<PricingTierData[]>([]);
   const cardsRef = useGsapScrollRevealStagger<HTMLDivElement>({
     y: 30,
     duration: 0.6,
     stagger: 0.15,
   });
+
+  useEffect(() => {
+    fetch("/api/tiers")
+      .then((r) => r.json())
+      .then(setTiers)
+      .catch(() => setTiers([]));
+  }, []);
 
   return (
     <section id="pricing" className="py-24 bg-warm-white">
@@ -36,7 +45,7 @@ const Pricing = () => {
 
         {/* Pricing Cards */}
         <div ref={cardsRef} className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {PRICING_TIERS.map((tier) => (
+          {tiers.map((tier) => (
             <div
               key={tier.id}
               className={`relative rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] ${
@@ -57,7 +66,7 @@ const Pricing = () => {
                   tier.highlighted ? "bg-sage-light text-sage" : "bg-sage-light text-sage"
                 }`}
               >
-                {tierIcons[tier.id]}
+                {tierIcons[tier.id] ?? <Sparkles className="w-6 h-6" />}
               </div>
 
               {/* Name & Price */}

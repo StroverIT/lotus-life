@@ -10,7 +10,7 @@ export async function GET(
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
   const { id } = await params;
-  const event = getEventById(id);
+  const event = await getEventById(id);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   return NextResponse.json(event);
 }
@@ -24,7 +24,7 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const updated = updateEvent(id, body as Partial<Omit<Event, "id">>);
+    const updated = await updateEvent(id, body as Partial<Omit<Event, "id">>);
     if (!updated) return NextResponse.json({ error: "Event not found" }, { status: 404 });
     return NextResponse.json(updated);
   } catch (err) {
@@ -43,7 +43,7 @@ export async function DELETE(
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
   const { id } = await params;
-  const ok = deleteEvent(id);
+  const ok = await deleteEvent(id);
   if (!ok) return NextResponse.json({ error: "Event not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

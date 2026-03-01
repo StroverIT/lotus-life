@@ -1,4 +1,5 @@
 import type { DaySchedule } from "@/types/schedule";
+import { prisma } from "@/lib/db";
 
 const DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -81,30 +82,45 @@ function buildVariant4(base: DaySchedule[]): DaySchedule[] {
   });
 }
 
-let baseSchedule: DaySchedule[] = JSON.parse(JSON.stringify(defaultBase));
-
-function buildVariants(): DaySchedule[][] {
-  return [
-    JSON.parse(JSON.stringify(baseSchedule)),
-    buildVariant2(baseSchedule),
-    buildVariant3(baseSchedule),
-    buildVariant4(baseSchedule),
-  ];
-}
-
-/** Get schedule variants for week rotation (used by public GET /api/schedules). */
-export function getScheduleVariants(): DaySchedule[][] {
-  return buildVariants();
+function parseSchedule(json: unknown): DaySchedule[] {
+  if (Array.isArray(json)) {
+    return json as DaySchedule[];
+  }
+  return JSON.parse(JSON.stringify(defaultBase));
 }
 
 /** Get current base schedule (for admin GET). */
-export function getBaseSchedule(): DaySchedule[] {
-  return JSON.parse(JSON.stringify(baseSchedule));
+export async function getBaseSchedule(): Promise<DaySchedule[]> {
+  try {
+    const row = await prisma.scheduleBase.findUnique({
+      where: { id: "default" },
+    });
+    if (!row?.schedule) return JSON.parse(JSON.stringify(defaultBase));
+    return JSON.parse(JSON.stringify(parseSchedule(row.schedule)));
+  } catch {
+    return JSON.parse(JSON.stringify(defaultBase));
+  }
 }
 
 /** Update base schedule (admin PUT). Ensures day order. */
-export function setBaseSchedule(schedule: DaySchedule[]): DaySchedule[] {
+export async function setBaseSchedule(schedule: DaySchedule[]): Promise<DaySchedule[]> {
   const byDay = new Map(schedule.map((d) => [d.day, d]));
-  baseSchedule = DAYS_ORDER.map((day) => byDay.get(day) ?? { day, classes: [] });
-  return getBaseSchedule();
+  const normalized: DaySchedule[] = DAYS_ORDER.map((day) => byDay.get(day) ?? { day, classes: [] });
+  await prisma.scheduleBase.upsert({
+    where: { id: "default" },
+    create: { id: "default", schedule: normalized as unknown as object },
+    update: { schedule: normalized as unknown as object },
+  });
+  return JSON.parse(JSON.stringify(normalized));
+}
+
+/** Get schedule variants for week rotation (used by public GET /api/schedules). */
+export async function getScheduleVariants(): Promise<DaySchedule[][]> {
+  const base = await getBaseSchedule();
+  return [
+    JSON.parse(JSON.stringify(base)),
+    buildVariant2(base),
+    buildVariant3(base),
+    buildVariant4(base),
+  ];
 }

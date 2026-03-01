@@ -5,7 +5,7 @@ import { getAllTiers, addTier } from "@/lib/pricingStore";
 export async function GET() {
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
-  const tiers = getAllTiers();
+  const tiers = await getAllTiers();
   return NextResponse.json(tiers);
 }
 
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const tier = addTier({ id, name, price, features, highlighted });
+    const tier = await addTier({ id, name, price, features, highlighted });
     return NextResponse.json(tier);
   } catch (err) {
     console.error("POST /api/admin/tiers", err);

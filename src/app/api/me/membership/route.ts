@@ -8,6 +8,6 @@ export async function GET() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const assignment = getUserMembership(session.user.id);
+  const assignment = await getUserMembership(session.user.id);
   return NextResponse.json({ tierId: assignment?.tierId ?? null });
 }

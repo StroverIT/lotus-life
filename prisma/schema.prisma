@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model ScheduleBase {
+  id        String   @id @default("default")
+  schedule  Json
+  updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  date        String
+  time        String
+  location    String
+  description String?
+}
+
+model PricingTier {
+  id          String   @id
+  name        String
+  price       Int
+  features    Json
+  highlighted Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  memberships UserMembership[]
+}
+
+model UserMembership {
+  userId    String      @id
+  tierId    String
+  validFrom String?
+  validTo   String?
+  updatedAt DateTime    @updatedAt
+  tier      PricingTier @relation(fields: [tierId], references: [id])
+}

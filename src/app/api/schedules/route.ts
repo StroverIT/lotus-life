@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       rangeEnd = addDays(rangeStart, 90); // ~3 months
     }
 
-    const scheduleVariants = getScheduleVariants();
+    const scheduleVariants = await getScheduleVariants();
     const weeks: WeeklySchedule[] = [];
     let cursor = getWeekStart(rangeStart);
     let weekIndex = 0;

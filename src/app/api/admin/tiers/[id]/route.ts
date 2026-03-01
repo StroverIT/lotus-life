@@ -9,7 +9,7 @@ export async function GET(
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
   const { id } = await params;
-  const tier = getTierById(id);
+  const tier = await getTierById(id);
   if (!tier) return NextResponse.json({ error: "Tier not found" }, { status: 404 });
   return NextResponse.json(tier);
 }
@@ -23,7 +23,7 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await request.json();
-    const updated = updateTier(id, body as Partial<{ name: string; price: number; features: string[]; highlighted: boolean }>);
+    const updated = await updateTier(id, body as Partial<{ name: string; price: number; features: string[]; highlighted: boolean }>);
     if (!updated) return NextResponse.json({ error: "Tier not found" }, { status: 404 });
     return NextResponse.json(updated);
   } catch (err) {
@@ -42,7 +42,7 @@ export async function DELETE(
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
   const { id } = await params;
-  const ok = deleteTier(id);
+  const ok = await deleteTier(id);
   if (!ok) return NextResponse.json({ error: "Tier not found" }, { status: 404 });
   return NextResponse.json({ success: true });
 }

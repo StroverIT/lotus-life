@@ -6,7 +6,7 @@ import type { DaySchedule } from "@/types/schedule";
 export async function GET() {
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
-  const schedule = getBaseSchedule();
+  const schedule = await getBaseSchedule();
   return NextResponse.json({ schedule });
 }
 
@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    const updated = setBaseSchedule(schedule);
+    const updated = await setBaseSchedule(schedule);
     return NextResponse.json({ schedule: updated });
   } catch (err) {
     console.error("PUT /api/admin/schedules", err);

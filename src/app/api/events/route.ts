@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const forDate = getEventsByDate(iso);
+    const forDate = await getEventsByDate(iso);
     return NextResponse.json(forDate);
   } catch (err) {
     console.error("GET /api/events", err);

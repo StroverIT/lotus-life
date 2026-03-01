@@ -12,12 +12,10 @@ import {
   type MockAttendance,
 } from "@/lib/mockPanelData";
 import {
-  PRICING_TIERS,
   getBenefitsUpgradeFrom,
   getBenefitsFromTo,
-  getUpgradeTiers,
-  getTierById,
   type PricingTierId,
+  type PricingTierData,
 } from "@/lib/pricing";
 import { Check } from "lucide-react";
 import { useGSAP } from "@gsap/react";
@@ -75,6 +73,7 @@ export default function PanelPage() {
   const [activeTab, setActiveTab] = useState<"visits" | "membership">("visits");
   const [visibleCount, setVisibleCount] = useState(VISITS_PAGE_SIZE);
   const [membershipTierId, setMembershipTierId] = useState<PricingTierId | null>(null);
+  const [tiers, setTiers] = useState<PricingTierData[]>([]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -89,6 +88,13 @@ export default function PanelPage() {
       .then((data) => setMembershipTierId(data.tierId ?? null))
       .catch(() => setMembershipTierId(null));
   }, [status]);
+
+  useEffect(() => {
+    fetch("/api/tiers")
+      .then((r) => r.json())
+      .then(setTiers)
+      .catch(() => setTiers([]));
+  }, []);
 
   const attendances = getMockAttendances(ATTENDANCE_PRESET);
   const sortedAttendances = useMemo(
@@ -113,8 +119,10 @@ export default function PanelPage() {
   }, [ATTENDANCE_PRESET, attendances.length]);
 
   const membership = membershipTierId;
-  const currentTier = membership ? getTierById(membership) : null;
-  const upgradeTiers = getUpgradeTiers(membership);
+  const currentTier = membership ? tiers.find((t) => t.id === membership) ?? null : null;
+  const upgradeTiers = membership
+    ? tiers.slice((tiers.findIndex((t) => t.id === membership) ?? -1) + 1)
+    : tiers;
   const nextTier = upgradeTiers[0] ?? null;
 
   if (status === "loading" || status === "unauthenticated") {
@@ -192,6 +200,7 @@ export default function PanelPage() {
           nextTier={nextTier}
           upgradeTiers={upgradeTiers}
           membershipId={membership}
+          tiers={tiers}
         />
       )}
     </div>
@@ -283,10 +292,11 @@ function VisitsTabContent({
 }
 
 interface MembershipTabContentProps {
-  currentTier: ReturnType<typeof getTierById> | null;
-  nextTier: ReturnType<typeof getTierById> | null;
-  upgradeTiers: ReturnType<typeof getUpgradeTiers>;
+  currentTier: PricingTierData | null;
+  nextTier: PricingTierData | null;
+  upgradeTiers: PricingTierData[];
   membershipId: PricingTierId | null;
+  tiers: PricingTierData[];
 }
 
 function MembershipTabContent({
@@ -294,6 +304,7 @@ function MembershipTabContent({
   nextTier,
   upgradeTiers,
   membershipId,
+  tiers,
 }: MembershipTabContentProps) {
   const listRef = useGsapScrollRevealStagger<HTMLDivElement>({
     y: 16,
@@ -315,10 +326,10 @@ function MembershipTabContent({
             <p className="text-charcoal-light font-body mb-2">
               You don&apos;t have a membership. Choose a plan below.
             </p>
-            {PRICING_TIERS.map((tier, index) => {
-              const nextTierData = PRICING_TIERS[index + 1];
+            {tiers.map((tier, index) => {
+              const nextTierData = tiers[index + 1];
               const benefitsUpgrade = nextTierData
-                ? getBenefitsUpgradeFrom(tier.id as PricingTierId)
+                ? getBenefitsUpgradeFrom(tier.id, tiers)
                 : [];
               return (
                 <div
@@ -435,7 +446,7 @@ function MembershipTabContent({
                   Benefits you&apos;ll gain:
                 </p>
                 <ul className="space-y-1 mb-4">
-                  {getBenefitsFromTo(membershipId, nextTier.id).map((f, i) => (
+                  {getBenefitsFromTo(currentTier, nextTier).map((f, i) => (
                     <li
                       key={i}
                       className="flex items-center gap-2 text-charcoal-light text-sm font-body"
@@ -452,7 +463,7 @@ function MembershipTabContent({
             )}
             {upgradeTiers.length > 1 &&
               upgradeTiers.slice(1).map((tier) => {
-                const benefitsGain = getBenefitsFromTo(membershipId, tier.id);
+                const benefitsGain = getBenefitsFromTo(currentTier, tier);
                 return (
                   <div
                     key={tier.id}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminSession } from "@/lib/auth";
-import { getAllEvents, addEvent } from "@/lib/eventsStore";
+import { getAllEvents, addEvent, getEventsByDate } from "@/lib/eventsStore";
 import type { Event } from "@/types/schedule";
 
 export async function GET(request: NextRequest) {
@@ -9,8 +9,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get("date");
   const events = date
-    ? getAllEvents().filter((e) => e.date === date.slice(0, 10))
-    : getAllEvents();
+    ? await getEventsByDate(date.slice(0, 10))
+    : await getAllEvents();
   return NextResponse.json(events);
 }
 
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const event = addEvent({
+    const event = await addEvent({
       title,
       date: date.slice(0, 10),
       time,
