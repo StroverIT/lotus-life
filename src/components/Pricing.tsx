@@ -1,6 +1,9 @@
-import { motion } from "framer-motion";
+"use client";
+
 import { Check, Gift, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AnimateIn } from "@/components/AnimateIn";
+import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
 
 interface PricingTier {
   name: string;
@@ -51,16 +54,16 @@ const pricingTiers: PricingTier[] = [
 ];
 
 const Pricing = () => {
+  const cardsRef = useGsapScrollRevealStagger<HTMLDivElement>({
+    y: 30,
+    duration: 0.6,
+    stagger: 0.15,
+  });
+
   return (
     <section id="pricing" className="py-24 bg-warm-white">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <AnimateIn className="text-center mb-16" y={20} duration={0.6}>
           <h2 className="font-display text-5xl md:text-6xl text-charcoal mb-4">
             Memberships
           </h2>
@@ -70,17 +73,13 @@ const Pricing = () => {
           <div className="inline-flex items-center gap-2 bg-sage-light text-sage-dark px-4 py-2 rounded-full text-sm font-body">
             <span>Single class: €10</span>
           </div>
-        </motion.div>
+        </AnimateIn>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {pricingTiers.map((tier, index) => (
-            <motion.div
+        <div ref={cardsRef} className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {pricingTiers.map((tier) => (
+            <div
               key={tier.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.15, duration: 0.6 }}
               className={`relative rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] ${
                 tier.highlighted
                   ? "bg-sage text-cream shadow-elevated"
@@ -157,7 +156,7 @@ const Pricing = () => {
               >
                 Get Started
               </Button>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { MapPin, Clock, Calendar, UserPlus } from "lucide-react";
+import { AnimateIn } from "@/components/AnimateIn";
+import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -31,6 +32,12 @@ function getTodayISO(): string {
 const Events = () => {
   const [date, setDate] = useState<string>(getTodayISO);
   const [events, setEvents] = useState<Event[]>([]);
+  const gridRef = useGsapScrollRevealStagger<HTMLDivElement>({
+    y: 20,
+    duration: 0.5,
+    stagger: 0.1,
+    dependencies: [events.length],
+  });
   const [loading, setLoading] = useState(true);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [signedUpEventIds, setSignedUpEventIds] = useState<Set<string>>(
@@ -106,27 +113,20 @@ const Events = () => {
   return (
     <section id="events" className="py-24 bg-cream">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
+        <AnimateIn className="text-center mb-12" y={20} duration={0.6}>
           <h2 className="font-display text-5xl md:text-6xl text-charcoal mb-4">
             Events
           </h2>
           <p className="text-charcoal-light text-lg max-w-xl mx-auto">
             One-off events on specific dates
           </p>
-        </motion.div>
+        </AnimateIn>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.6 }}
+        <AnimateIn
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
+          y={20}
+          delay={0.2}
+          duration={0.6}
         >
           <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
             <PopoverTrigger asChild>
@@ -151,30 +151,23 @@ const Events = () => {
               />
             </PopoverContent>
           </Popover>
-        </motion.div>
+        </AnimateIn>
 
         {loading ? (
           <p className="text-center text-charcoal-light font-body">
             Loading events…
           </p>
         ) : events.length === 0 ? (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center text-charcoal-light font-body italic"
-          >
+          <p className="text-center text-charcoal-light font-body italic">
             No events on this date.
-          </motion.p>
+          </p>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((evt, index) => {
+          <div ref={gridRef} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((evt) => {
               const isSignedUp = signedUpEventIds.has(evt.id);
               return (
-                <motion.article
+                <article
                   key={evt.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
                   role="button"
                   tabIndex={0}
                   onClick={() => handleOpenSignUp(evt)}
@@ -222,7 +215,7 @@ const Events = () => {
                       )}
                     </div>
                   </div>
-                </motion.article>
+                </article>
               );
             })}
           </div>

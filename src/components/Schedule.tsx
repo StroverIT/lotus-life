@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Clock, UserPlus } from "lucide-react";
+import { AnimateIn } from "@/components/AnimateIn";
+import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,13 @@ const Schedule = () => {
   const [schedules, setSchedules] = useState<WeeklySchedule[]>([]);
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const gridRef = useGsapScrollRevealStagger<HTMLDivElement>({
+    y: 20,
+    duration: 0.5,
+    stagger: 0.1,
+    delay: 0,
+    dependencies: [loading],
+  });
   const [filter, setFilter] = useState<"all" | Location>("all");
   const [signedUpSlotIds, setSignedUpSlotIds] = useState<Set<string>>(
     () => new Set()
@@ -129,13 +137,7 @@ const Schedule = () => {
   return (
     <section id="schedule" className="py-24 bg-marble">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
+        <AnimateIn className="text-center mb-16" y={20} duration={0.6}>
           <h2 className="font-display text-5xl md:text-6xl text-charcoal mb-4">
             Weekly Schedule
           </h2>
@@ -144,17 +146,11 @@ const Schedule = () => {
               ? `${selectedWeek.weekLabel} • Regular Practices`
               : "Loading…"}
           </p>
-        </motion.div>
+        </AnimateIn>
 
         {/* Week selector */}
         {schedules.length > 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1, duration: 0.6 }}
-            className="flex justify-center mb-8"
-          >
+          <AnimateIn className="flex justify-center mb-8" y={20} delay={0.1} duration={0.6}>
             <Select
               value={String(selectedWeekIndex)}
               onValueChange={(v) => setSelectedWeekIndex(Number(v))}
@@ -170,17 +166,11 @@ const Schedule = () => {
                 ))}
               </SelectContent>
             </Select>
-          </motion.div>
+          </AnimateIn>
         )}
 
         {/* Location Filter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="flex justify-center gap-4 mb-12"
-        >
+        <AnimateIn className="flex justify-center gap-4 mb-12" y={20} delay={0.2} duration={0.6}>
           {[
             { key: "all", label: "All Locations" },
             { key: "pirin", label: "Pirin Hall" },
@@ -198,7 +188,7 @@ const Schedule = () => {
               {item.label}
             </button>
           ))}
-        </motion.div>
+        </AnimateIn>
 
         {/* Schedule Grid */}
         {loading ? (
@@ -206,32 +196,24 @@ const Schedule = () => {
             Loading schedule…
           </p>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <AnimatePresence mode="wait">
-              {filteredSchedule.map((day, dayIndex) => (
-                <motion.div
-                  key={day.day}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: dayIndex * 0.1, duration: 0.5 }}
-                  className="bg-cream rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-shadow duration-300"
-                >
-                  <h3 className="font-display text-2xl text-charcoal mb-4 pb-3 border-b border-border">
-                    {day.day}
-                  </h3>
-                  {day.classes.length > 0 ? (
-                    <div className="space-y-2">
-                      {day.classes.map((cls, index) => {
-                        const slotId = buildScheduleSlotId(day.day, cls);
-                        const isSignedUp = signedUpSlotIds.has(slotId);
-                        return (
-                          <motion.div
-                            key={`${cls.name}-${index}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.1 }}
-                            role="button"
+          <div ref={gridRef} className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredSchedule.map((day) => (
+              <div
+                key={day.day}
+                className="bg-cream rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-shadow duration-300"
+              >
+                <h3 className="font-display text-2xl text-charcoal mb-4 pb-3 border-b border-border">
+                  {day.day}
+                </h3>
+                {day.classes.length > 0 ? (
+                  <div className="space-y-2">
+                    {day.classes.map((cls, index) => {
+                      const slotId = buildScheduleSlotId(day.day, cls);
+                      const isSignedUp = signedUpSlotIds.has(slotId);
+                      return (
+                        <div
+                          key={`${cls.name}-${index}`}
+                          role="button"
                             tabIndex={0}
                             onClick={() => handleOpenSignUp(day.day, cls)}
                             onKeyDown={(e) => {
@@ -275,7 +257,7 @@ const Schedule = () => {
                                 </span>
                               )}
                             </div>
-                          </motion.div>
+                          </div>
                         );
                       })}
                     </div>
@@ -284,20 +266,13 @@ const Schedule = () => {
                       No classes at selected location
                     </p>
                   )}
-                </motion.div>
+                </div>
               ))}
-            </AnimatePresence>
           </div>
         )}
 
         {/* Booking Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mt-12 text-center"
-        >
+        <AnimateIn className="mt-12 text-center" y={20} delay={0.4} duration={0.6}>
           <div className="inline-flex items-center gap-3 bg-sage-light text-sage-dark px-6 py-4 rounded-xl">
             <Clock className="w-5 h-5" />
             <span className="font-body">
@@ -307,7 +282,7 @@ const Schedule = () => {
               </a>
             </span>
           </div>
-        </motion.div>
+        </AnimateIn>
       </div>
 
       {/* Sign up dialog */}

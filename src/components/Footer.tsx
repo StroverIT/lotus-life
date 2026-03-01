@@ -1,5 +1,7 @@
-import { motion } from "framer-motion";
-import { Phone, Mail, MapPin, Instagram, Facebook, Clock } from "lucide-react";
+"use client";
+
+import { Phone, MapPin, Clock } from "lucide-react";
+import { AnimateIn } from "@/components/AnimateIn";
 
 const LotusIcon = () => (
   <svg viewBox="0 0 80 80" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -45,12 +47,7 @@ const Footer = () => {
         {/* Main Footer Content */}
         <div className="py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Brand */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+          <AnimateIn y={20} duration={0.6}>
             <div className="flex items-center gap-3 mb-4">
               <LotusIcon />
               <span className="font-display text-2xl">Lotus Life</span>
@@ -61,15 +58,10 @@ const Footer = () => {
             <p className="text-cream/60 text-sm">
               Your sanctuary for holistic wellness in the heart of Bansko, Bulgaria.
             </p>
-          </motion.div>
+          </AnimateIn>
 
           {/* Locations */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1, duration: 0.6 }}
-          >
+          <AnimateIn y={20} delay={0.1} duration={0.6}>
             <h4 className="font-display text-lg mb-4">Our Studios</h4>
             <div className="space-y-4">
               <div>
@@ -87,15 +79,10 @@ const Footer = () => {
                 </p>
               </div>
             </div>
-          </motion.div>
+          </AnimateIn>
 
           {/* Contact */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
+          <AnimateIn y={20} delay={0.2} duration={0.6}>
             <h4 className="font-display text-lg mb-4">Contact</h4>
             <div className="space-y-3">
               <a
@@ -110,15 +97,10 @@ const Footer = () => {
                 Pre-booking required
               </p>
             </div>
-          </motion.div>
+          </AnimateIn>
 
           {/* Quick Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-          >
+          <AnimateIn y={20} delay={0.3} duration={0.6}>
             <h4 className="font-display text-lg mb-4">Quick Links</h4>
             <div className="space-y-2">
               <a
@@ -140,7 +122,7 @@ const Footer = () => {
                 About Us
               </a>
             </div>
-          </motion.div>
+          </AnimateIn>
         </div>
 
         {/* Bottom Bar */}
