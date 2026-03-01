@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addEventSignUp, getEventSignUpsByEvent } from "@/lib/store";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,40 +30,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const signUp = addEventSignUp(eventId, {
-      userId,
-      guestEmail,
-      guestName,
+    const signUp = await prisma.eventSignUp.create({
+      data: {
+        eventId,
+        userId: userId ?? null,
+        guestEmail: guestEmail ?? null,
+        guestName: guestName ?? null,
+      },
     });
 
-    return NextResponse.json(signUp, { status: 201 });
+    return NextResponse.json(
+      {
+        id: signUp.id,
+        eventId: signUp.eventId,
+        userId: signUp.userId ?? undefined,
+        guestEmail: signUp.guestEmail ?? undefined,
+        guestName: signUp.guestName ?? undefined,
+        signedUpAt: signUp.signedUpAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("POST /api/events/sign-up", err);
     return NextResponse.json(
       { error: "Failed to sign up" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get("eventId");
-
-    if (!eventId) {
-      return NextResponse.json(
-        { error: "eventId query param is required" },
-        { status: 400 }
-      );
-    }
-
-    const signUps = getEventSignUpsByEvent(eventId);
-    return NextResponse.json(signUps);
-  } catch (err) {
-    console.error("GET /api/events/sign-up", err);
-    return NextResponse.json(
-      { error: "Failed to load sign-ups" },
       { status: 500 }
     );
   }

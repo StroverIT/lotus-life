@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addSignUp, getSignUpsBySlot } from "@/lib/store";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,40 +30,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const signUp = addSignUp(scheduleSlotId, {
-      userId,
-      guestEmail,
-      guestName,
+    const signUp = await prisma.scheduleSignUp.create({
+      data: {
+        scheduleSlotId,
+        userId: userId ?? null,
+        guestEmail: guestEmail ?? null,
+        guestName: guestName ?? null,
+      },
     });
 
-    return NextResponse.json(signUp, { status: 201 });
+    return NextResponse.json(
+      {
+        id: signUp.id,
+        scheduleSlotId: signUp.scheduleSlotId,
+        userId: signUp.userId ?? undefined,
+        guestEmail: signUp.guestEmail ?? undefined,
+        guestName: signUp.guestName ?? undefined,
+        signedUpAt: signUp.signedUpAt.toISOString(),
+      },
+      { status: 201 }
+    );
   } catch (err) {
     console.error("POST /api/schedules/sign-up", err);
     return NextResponse.json(
       { error: "Failed to sign up" },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const scheduleSlotId = searchParams.get("scheduleSlotId");
-
-    if (!scheduleSlotId) {
-      return NextResponse.json(
-        { error: "scheduleSlotId query param is required" },
-        { status: 400 }
-      );
-    }
-
-    const signUps = getSignUpsBySlot(scheduleSlotId);
-    return NextResponse.json(signUps);
-  } catch (err) {
-    console.error("GET /api/schedules/sign-up", err);
-    return NextResponse.json(
-      { error: "Failed to load sign-ups" },
       { status: 500 }
     );
   }

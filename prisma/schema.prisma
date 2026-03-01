@@ -13,12 +13,32 @@ model ScheduleBase {
 }
 
 model Event {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   date        String
   time        String
   location    String
   description String?
+  eventSignUps EventSignUp[]
+}
+
+model EventSignUp {
+  id         String   @id @default(cuid())
+  eventId    String
+  userId     String?
+  guestEmail String?
+  guestName  String?
+  signedUpAt DateTime @default(now())
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model ScheduleSignUp {
+  id              String   @id @default(cuid())
+  scheduleSlotId  String
+  userId          String?
+  guestEmail      String?
+  guestName       String?
+  signedUpAt      DateTime @default(now())
 }
 
 model PricingTier {

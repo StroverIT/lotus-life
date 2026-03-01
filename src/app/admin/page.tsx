@@ -79,17 +79,34 @@ export default function AdminPage() {
   );
 }
 
+interface ScheduleSignUpRow {
+  id: string;
+  scheduleSlotId: string;
+  userId?: string;
+  guestEmail?: string;
+  guestName?: string;
+  signedUpAt: string;
+}
+
 function ScheduleTab() {
   const [schedule, setSchedule] = useState<DaySchedule[]>([]);
+  const [scheduleSignUps, setScheduleSignUps] = useState<ScheduleSignUpRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editDay, setEditDay] = useState<DaySchedule | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/schedules");
-    if (res.ok) {
-      const data = await res.json();
+    const [schedRes, signUpsRes] = await Promise.all([
+      fetch("/api/admin/schedules"),
+      fetch("/api/admin/schedule-sign-ups"),
+    ]);
+    if (schedRes.ok) {
+      const data = await schedRes.json();
       setSchedule(data.schedule ?? []);
+    }
+    if (signUpsRes.ok) {
+      const data = await signUpsRes.json();
+      setScheduleSignUps(data);
     }
     setLoading(false);
   }, []);
@@ -205,12 +222,49 @@ function ScheduleTab() {
           </div>
         ))}
       </div>
+      <div className="mt-8">
+        <h3 className="font-medium text-charcoal mb-2">Schedule sign-ups</h3>
+        {scheduleSignUps.length === 0 ? (
+          <p className="text-sm text-charcoal-light">No sign-ups yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Slot</TableHead>
+                <TableHead>Name / Email</TableHead>
+                <TableHead>Signed up at</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {scheduleSignUps.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell className="font-mono text-sm">{s.scheduleSlotId}</TableCell>
+                  <TableCell>
+                    {s.userId ? s.userId : [s.guestName, s.guestEmail].filter(Boolean).join(" — ") || "—"}
+                  </TableCell>
+                  <TableCell className="text-charcoal-light text-sm">{new Date(s.signedUpAt).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }
 
+interface EventSignUpRow {
+  id: string;
+  eventId: string;
+  userId?: string;
+  guestEmail?: string;
+  guestName?: string;
+  signedUpAt: string;
+}
+
 function EventsTab() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [eventSignUps, setEventSignUps] = useState<EventSignUpRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -224,10 +278,17 @@ function EventsTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/events");
-    if (res.ok) {
-      const data = await res.json();
+    const [eventsRes, signUpsRes] = await Promise.all([
+      fetch("/api/admin/events"),
+      fetch("/api/admin/event-sign-ups"),
+    ]);
+    if (eventsRes.ok) {
+      const data = await eventsRes.json();
       setEvents(data);
+    }
+    if (signUpsRes.ok) {
+      const data = await signUpsRes.json();
+      setEventSignUps(data);
     }
     setLoading(false);
   }, []);
@@ -342,6 +403,33 @@ function EventsTab() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <div className="mt-8">
+        <h3 className="font-medium text-charcoal mb-2">Event sign-ups</h3>
+        {eventSignUps.length === 0 ? (
+          <p className="text-sm text-charcoal-light">No sign-ups yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Event</TableHead>
+                <TableHead>Name / Email</TableHead>
+                <TableHead>Signed up at</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {eventSignUps.map((s) => (
+                <TableRow key={s.id}>
+                  <TableCell>{events.find((e) => e.id === s.eventId)?.title ?? s.eventId}</TableCell>
+                  <TableCell>
+                    {s.userId ? s.userId : [s.guestName, s.guestEmail].filter(Boolean).join(" — ") || "—"}
+                  </TableCell>
+                  <TableCell className="text-charcoal-light text-sm">{new Date(s.signedUpAt).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }
