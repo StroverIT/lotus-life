@@ -143,28 +143,26 @@ export default function PanelPage() {
             Home
           </Link>
           <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("visits")}
-            className={`px-4 py-2.5 rounded-lg font-body text-sm font-medium transition-colors ${
-              activeTab === "visits"
-                ? "bg-sage text-cream"
-                : "text-charcoal-light hover:bg-charcoal/5"
-            }`}
-          >
-            Visits
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("membership")}
-            className={`px-4 py-2.5 rounded-lg font-body text-sm font-medium transition-colors ${
-              activeTab === "membership"
-                ? "bg-sage text-cream"
-                : "text-charcoal-light hover:bg-charcoal/5"
-            }`}
-          >
-            Membership
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("visits")}
+              className={`px-4 py-2.5 rounded-lg font-body text-sm font-medium transition-colors ${activeTab === "visits"
+                  ? "bg-sage text-cream"
+                  : "text-charcoal-light hover:bg-charcoal/5"
+                }`}
+            >
+              Visits
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("membership")}
+              className={`px-4 py-2.5 rounded-lg font-body text-sm font-medium transition-colors ${activeTab === "membership"
+                  ? "bg-sage text-cream"
+                  : "text-charcoal-light hover:bg-charcoal/5"
+                }`}
+            >
+              Membership
+            </button>
           </div>
         </div>
       </div>
@@ -240,11 +238,10 @@ function VisitsTabContent({
             <div className="bg-cream rounded-xl p-4 border border-border">
               <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span
-                  className={`text-xs font-body px-2 py-1 rounded-full ${
-                    att.type === "event"
+                  className={`text-xs font-body px-2 py-1 rounded-full ${att.type === "event"
                       ? "bg-sage-light text-sage-dark"
                       : "bg-charcoal/10 text-charcoal"
-                  }`}
+                    }`}
                 >
                   {att.type === "event" ? "Event" : "Class"}
                 </span>
@@ -318,32 +315,28 @@ function MembershipTabContent({
               return (
                 <div
                   key={tier.id}
-                  className={`rounded-2xl p-6 border transition-all duration-300 ${
-                    tier.highlighted
+                  className={`rounded-2xl p-6 border transition-all duration-300 ${tier.highlighted
                       ? "bg-sage text-cream border-sage shadow-elevated"
                       : "bg-cream border-border shadow-soft"
-                  }`}
+                    }`}
                 >
                   <div className="flex flex-wrap items-baseline justify-between gap-4 mb-4">
                     <h3
-                      className={`font-display text-xl ${
-                        tier.highlighted ? "text-cream" : "text-charcoal"
-                      }`}
+                      className={`font-display text-xl ${tier.highlighted ? "text-cream" : "text-charcoal"
+                        }`}
                     >
                       {tier.name}
                     </h3>
                     <div className="flex items-baseline gap-1">
                       <span
-                        className={`font-display text-3xl font-light ${
-                          tier.highlighted ? "text-cream" : "text-charcoal"
-                        }`}
+                        className={`font-display text-3xl font-light ${tier.highlighted ? "text-cream" : "text-charcoal"
+                          }`}
                       >
                         €{tier.price}
                       </span>
                       <span
-                        className={`text-sm ${
-                          tier.highlighted ? "text-cream/70" : "text-charcoal-light"
-                        }`}
+                        className={`text-sm ${tier.highlighted ? "text-cream/70" : "text-charcoal-light"
+                          }`}
                       >
                         /month
                       </span>
@@ -353,14 +346,12 @@ function MembershipTabContent({
                     {tier.features.map((f, i) => (
                       <li
                         key={i}
-                        className={`flex items-center gap-2 text-sm font-body ${
-                          tier.highlighted ? "text-cream/90" : "text-charcoal-light"
-                        }`}
+                        className={`flex items-center gap-2 text-sm font-body ${tier.highlighted ? "text-cream/90" : "text-charcoal-light"
+                          }`}
                       >
                         <Check
-                          className={`w-4 h-4 shrink-0 ${
-                            tier.highlighted ? "text-cream" : "text-sage"
-                          }`}
+                          className={`w-4 h-4 shrink-0 ${tier.highlighted ? "text-cream" : "text-sage"
+                            }`}
                         />
                         {f}
                       </li>
@@ -368,9 +359,8 @@ function MembershipTabContent({
                   </ul>
                   {nextTierData && benefitsUpgrade.length > 0 && (
                     <p
-                      className={`text-xs font-body mb-4 ${
-                        tier.highlighted ? "text-cream/80" : "text-charcoal-light"
-                      }`}
+                      className={`text-xs font-body mb-4 ${tier.highlighted ? "text-cream/80" : "text-charcoal-light"
+                        }`}
                     >
                       Upgrade to {nextTierData.name} to get:{" "}
                       {benefitsUpgrade.join(", ")}
