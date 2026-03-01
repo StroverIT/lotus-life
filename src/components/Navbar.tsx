@@ -1,13 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Phone } from "lucide-react";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { Menu, X, Phone, User, LogIn } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 
 const Navbar = () => {
+  const { data: session, status } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -91,6 +100,33 @@ const Navbar = () => {
                 {link.label}
               </a>
             ))}
+            {status !== "loading" && (
+              session ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="font-body text-charcoal hover:bg-sage-light">
+                      <User className="w-4 h-4" />
+                      Account
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="font-body">
+                    <DropdownMenuItem asChild>
+                      <Link href="/panel">Panel</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => signOut()}>
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button variant="sage-ghost" size="sm" asChild>
+                  <Link href="/auth/signin" className="flex items-center gap-2">
+                    <LogIn className="w-4 h-4" />
+                    Sign in
+                  </Link>
+                </Button>
+              )
+            )}
             <Button variant="sage" size="sm" asChild>
               <a href="tel:+359883317785" className="flex items-center gap-2">
                 <Phone className="w-4 h-4" />
@@ -126,6 +162,38 @@ const Navbar = () => {
               {link.label}
             </a>
           ))}
+          {status !== "loading" && (
+            session ? (
+              <>
+                <Link
+                  href="/panel"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-charcoal hover:text-sage transition-colors font-body py-2 flex items-center gap-2"
+                >
+                  <User className="w-4 h-4" />
+                  Account
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => { signOut(); setIsMobileMenuOpen(false); }}
+                  className="text-charcoal hover:text-sage transition-colors font-body py-2 text-left"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Button variant="sage-ghost" asChild className="mt-2">
+                <Link
+                  href="/auth/signin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign in
+                </Link>
+              </Button>
+            )
+          )}
           <Button variant="sage" asChild className="mt-2">
             <a href="tel:+359883317785" className="flex items-center justify-center gap-2">
               <Phone className="w-4 h-4" />

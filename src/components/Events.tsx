@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapPin, Clock, Calendar, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { MapPin, Clock, Calendar, UserPlus, LogIn, User } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { AnimateIn } from "@/components/AnimateIn";
 import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
 import { format } from "date-fns";
@@ -50,6 +52,8 @@ const Events = () => {
   const [guestEmail, setGuestEmail] = useState("");
   const [guestName, setGuestName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [signUpStep, setSignUpStep] = useState<"choice" | "guest" | "signed-in">("choice");
+  const { data: session } = useSession();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,14 +74,17 @@ const Events = () => {
 
   const handleOpenSignUp = (evt: Event) => {
     setSignUpDialog({ open: true, event: evt });
-    setGuestEmail("");
-    setGuestName("");
+    setGuestEmail(session?.user?.email ?? "");
+    setGuestName(session?.user?.name ?? "");
+    setSignUpStep(session ? "signed-in" : "choice");
   };
 
   const handleSubmitSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     const evt = signUpDialog.event;
-    if (!evt || !guestEmail.trim()) return;
+    const hasSession = !!session?.user;
+    if (!evt) return;
+    if (!hasSession && !guestEmail.trim()) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/events/sign-up", {
@@ -85,8 +92,9 @@ const Events = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eventId: evt.id,
-          guestEmail: guestEmail.trim(),
-          guestName: guestName.trim() || undefined,
+          ...(hasSession
+            ? { userId: (session?.user as { id?: string })?.id ?? session?.user?.email }
+            : { guestEmail: guestEmail.trim(), guestName: guestName.trim() || undefined }),
         }),
       });
       if (!res.ok) {
@@ -239,44 +247,75 @@ const Events = () => {
                 : ""}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmitSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="ev-guestEmail" className="text-charcoal">
-                Email *
-              </Label>
-              <Input
-                id="ev-guestEmail"
-                type="email"
-                placeholder="you@example.com"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-                required
-                className="bg-cream border-border"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ev-guestName" className="text-charcoal">
-                Name
-              </Label>
-              <Input
-                id="ev-guestName"
-                type="text"
-                placeholder="Your name"
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="bg-cream border-border"
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                type="submit"
-                disabled={submitting || !guestEmail.trim()}
-                className="bg-sage text-cream hover:bg-sage-dark"
-              >
-                {submitting ? "Signing up…" : "Sign up"}
+          {signUpStep === "choice" ? (
+            <div className="space-y-3">
+              <p className="text-charcoal-light text-sm font-body">
+                Sign in to track your visits in your account, or continue as a guest.
+              </p>
+              <Button variant="sage" className="w-full font-body" asChild>
+                <Link href="/auth/signin?callbackUrl=/panel">
+                  <LogIn className="w-4 h-4" />
+                  Sign in / Sign up
+                </Link>
               </Button>
-            </DialogFooter>
-          </form>
+              <Button
+                variant="outline"
+                className="w-full font-body border-border"
+                onClick={() => setSignUpStep("guest")}
+              >
+                <User className="w-4 h-4" />
+                Continue as guest
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmitSignUp} className="space-y-4">
+              {signUpStep === "signed-in" && (
+                <p className="text-sage text-sm font-body">
+                  You&apos;re signed in as {session?.user?.email}. This will be linked to your account.
+                </p>
+              )}
+              {signUpStep === "guest" && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="ev-guestEmail" className="text-charcoal">
+                      Email *
+                    </Label>
+                    <Input
+                      id="ev-guestEmail"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={guestEmail}
+                      onChange={(e) => setGuestEmail(e.target.value)}
+                      required
+                      className="bg-cream border-border"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ev-guestName" className="text-charcoal">
+                      Name
+                    </Label>
+                    <Input
+                      id="ev-guestName"
+                      type="text"
+                      placeholder="Your name"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      className="bg-cream border-border"
+                    />
+                  </div>
+                </>
+              )}
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  disabled={submitting || (signUpStep === "guest" && !guestEmail.trim())}
+                  className="bg-sage text-cream hover:bg-sage-dark"
+                >
+                  {submitting ? "Signing up…" : "Confirm sign up"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </section>

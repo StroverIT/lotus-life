@@ -4,54 +4,13 @@ import { Check, Gift, Users, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimateIn } from "@/components/AnimateIn";
 import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
+import { PRICING_TIERS, type PricingTierId } from "@/lib/pricing";
 
-interface PricingTier {
-  name: string;
-  price: number;
-  icon: React.ReactNode;
-  features: string[];
-  highlighted?: boolean;
-}
-
-const pricingTiers: PricingTier[] = [
-  {
-    name: "Lotus Essence",
-    price: 50,
-    icon: <Sparkles className="w-6 h-6" />,
-    features: [
-      "1 friend pass",
-      "Up to 6 visits",
-      "Each additional visit: €8",
-    ],
-  },
-  {
-    name: "Lotus Bloom",
-    price: 75,
-    icon: <Users className="w-6 h-6" />,
-    features: [
-      "1 friend pass",
-      "Unlimited regular practices",
-      "15% off massages (Aksiniya Tsenova)",
-      "15% off events",
-      "15% off items in Lotus Life",
-    ],
-    highlighted: true,
-  },
-  {
-    name: "Lotus Life",
-    price: 120,
-    icon: <Gift className="w-6 h-6" />,
-    features: [
-      "2 friend passes",
-      "Unlimited regular practices",
-      "15% off massages (Aksiniya Tsenova)",
-      "15% off events",
-      "15% off individual sessions",
-      "15% off items in Lotus Life",
-      "Welcome gift box",
-    ],
-  },
-];
+const tierIcons: Record<PricingTierId, React.ReactNode> = {
+  essence: <Sparkles className="w-6 h-6" />,
+  bloom: <Users className="w-6 h-6" />,
+  life: <Gift className="w-6 h-6" />,
+};
 
 const Pricing = () => {
   const cardsRef = useGsapScrollRevealStagger<HTMLDivElement>({
@@ -77,9 +36,9 @@ const Pricing = () => {
 
         {/* Pricing Cards */}
         <div ref={cardsRef} className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {pricingTiers.map((tier) => (
+          {PRICING_TIERS.map((tier) => (
             <div
-              key={tier.name}
+              key={tier.id}
               className={`relative rounded-2xl p-8 transition-all duration-300 hover:scale-[1.02] ${
                 tier.highlighted
                   ? "bg-sage text-cream shadow-elevated"
@@ -98,7 +57,7 @@ const Pricing = () => {
                   tier.highlighted ? "bg-sage-light text-sage" : "bg-sage-light text-sage"
                 }`}
               >
-                {tier.icon}
+                {tierIcons[tier.id]}
               </div>
 
               {/* Name & Price */}
