@@ -9,7 +9,7 @@ export async function PATCH(
   const result = await requireAdminSession();
   if (result instanceof NextResponse) return result;
   const { id } = await params;
-  const user = findUserByEmail(id);
+  const user = await findUserByEmail(id);
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
   try {
     const body = await request.json();
@@ -18,7 +18,7 @@ export async function PATCH(
       role?: "user" | "admin";
       password?: string;
     };
-    const updated = updateUser(id, { name, role, password });
+    const updated = await updateUser(id, { name, role, password });
     if (!updated) return NextResponse.json({ error: "User not found" }, { status: 404 });
     const { password: _p, ...safe } = updated;
     return NextResponse.json(safe);

@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString?.trim()) {
@@ -90,6 +91,19 @@ async function main() {
       update: { name: tier.name, price: tier.price, features: tier.features, highlighted: tier.highlighted, sortOrder: tier.sortOrder },
     });
   }
+
+  const demoPasswordHash = await bcrypt.hash("demo123", 10);
+  await prisma.user.upsert({
+    where: { email: "demo@lotuslife.com" },
+    create: {
+      email: "demo@lotuslife.com",
+      name: "Demo User",
+      password: demoPasswordHash,
+      role: "admin",
+      provider: "credentials",
+    },
+    update: { name: "Demo User", role: "admin", password: demoPasswordHash, provider: "credentials" },
+  });
 
   console.log("Seed completed.");
 }

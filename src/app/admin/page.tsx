@@ -438,6 +438,7 @@ interface UserRow {
   email: string;
   name: string;
   role: string;
+  provider?: string;
 }
 
 function UsersTab() {
@@ -496,6 +497,7 @@ function UsersTab() {
             <TableHead>Email</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Role</TableHead>
+            <TableHead>Login type</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -505,6 +507,7 @@ function UsersTab() {
               <TableCell>{u.email}</TableCell>
               <TableCell>{u.name}</TableCell>
               <TableCell>{u.role}</TableCell>
+              <TableCell className="capitalize">{u.provider ?? "credentials"}</TableCell>
               <TableCell>
                 <Button size="sm" variant="ghost" onClick={() => openEdit(u)}><Pencil className="w-4 h-4" /></Button>
               </TableCell>

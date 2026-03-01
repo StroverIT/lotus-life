@@ -1,7 +1,8 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { findUserByEmail, addUser, isAdminEmail } from "@/lib/usersStore";
+import bcrypt from "bcryptjs";
+import { findUserByEmail, addUser, isAdminEmail, upsertUserFromOAuth } from "@/lib/usersStore";
 import type { Role } from "@/types/next-auth";
 
 const providers: NextAuthOptions["providers"] = [
@@ -20,9 +21,9 @@ const providers: NextAuthOptions["providers"] = [
         const name = (credentials.name as string)?.trim() || credentials.email.split("@")[0];
         const password = (credentials.password as string)?.trim();
         if (!password) return null;
-        const existing = findUserByEmail(credentials.email);
+        const existing = await findUserByEmail(credentials.email);
         if (existing) return null;
-        addUser({
+        await addUser({
           email: credentials.email,
           password,
           name,
@@ -30,8 +31,10 @@ const providers: NextAuthOptions["providers"] = [
         });
         return { id: credentials.email, email: credentials.email, name, role: "user" as Role };
       }
-      const user = findUserByEmail(credentials.email);
-      if (!user || user.password !== credentials.password) return null;
+      const user = await findUserByEmail(credentials.email);
+      if (!user?.password) return null;
+      const ok = await bcrypt.compare(credentials.password as string, user.password);
+      if (!ok) return null;
       return { id: user.email, email: user.email, name: user.name, role: user.role };
     },
   }),
@@ -52,12 +55,22 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.role = user.role ?? (isAdminEmail(user.email ?? "") ? "admin" : "user");
+        // Persist OAuth users to Supabase on first sign-in (store login type: google, facebook, etc.)
+        if (account?.provider && account.provider !== "credentials" && user.email) {
+          const persisted = await upsertUserFromOAuth(
+            user.email,
+            user.name ?? null,
+            user.image ?? null,
+            account.provider
+          );
+          token.role = persisted.role as Role;
+        }
       }
       return token;
     },
