@@ -1,8 +1,11 @@
 import "next-auth";
 
+export type Role = "user" | "admin";
+
 declare module "next-auth" {
   interface User {
     id?: string;
+    role?: Role;
   }
 
   interface Session {
@@ -11,6 +14,7 @@ declare module "next-auth" {
       email?: string | null;
       name?: string | null;
       image?: string | null;
+      role?: Role;
     };
   }
 }

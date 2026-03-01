@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Menu, X, Phone, User, LogIn } from "lucide-react";
+import { Menu, X, Phone, User, LogIn, Shield } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,6 +113,14 @@ const Navbar = () => {
                     <DropdownMenuItem asChild>
                       <Link href="/panel">Panel</Link>
                     </DropdownMenuItem>
+                    {(session.user as { role?: string }).role === "admin" && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex items-center gap-2">
+                          <Shield className="w-4 h-4" />
+                          Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => signOut()}>
                       Sign out
                     </DropdownMenuItem>
@@ -173,6 +181,16 @@ const Navbar = () => {
                   <User className="w-4 h-4" />
                   Account
                 </Link>
+                {(session.user as { role?: string }).role === "admin" && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-charcoal hover:text-sage transition-colors font-body py-2 flex items-center gap-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={() => { signOut(); setIsMobileMenuOpen(false); }}

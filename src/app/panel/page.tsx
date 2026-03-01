@@ -7,7 +7,6 @@ import Link from "next/link";
 import { Calendar, MapPin, Sparkles, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  MOCK_CURRENT_MEMBERSHIP,
   getMockAttendances,
   VISITS_PAGE_SIZE,
   type MockAttendance,
@@ -75,12 +74,21 @@ export default function PanelPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"visits" | "membership">("visits");
   const [visibleCount, setVisibleCount] = useState(VISITS_PAGE_SIZE);
+  const [membershipTierId, setMembershipTierId] = useState<PricingTierId | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.replace("/auth/signin?callbackUrl=/panel");
     }
   }, [status, router]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    fetch("/api/me/membership")
+      .then((r) => r.json())
+      .then((data) => setMembershipTierId(data.tierId ?? null))
+      .catch(() => setMembershipTierId(null));
+  }, [status]);
 
   const attendances = getMockAttendances(ATTENDANCE_PRESET);
   const sortedAttendances = useMemo(
@@ -104,7 +112,7 @@ export default function PanelPage() {
     setVisibleCount(VISITS_PAGE_SIZE);
   }, [ATTENDANCE_PRESET, attendances.length]);
 
-  const membership = MOCK_CURRENT_MEMBERSHIP;
+  const membership = membershipTierId;
   const currentTier = membership ? getTierById(membership) : null;
   const upgradeTiers = getUpgradeTiers(membership);
   const nextTier = upgradeTiers[0] ?? null;

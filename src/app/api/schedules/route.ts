@@ -1,104 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  addDays,
-  startOfWeek,
-  endOfWeek,
-  format,
-  isWithinInterval,
-  parseISO,
-} from "date-fns";
-import type { DaySchedule, WeeklySchedule } from "@/types/schedule";
-
-// Base schedule (matches current Schedule.tsx). Variants for different weeks.
-const baseSchedule: DaySchedule[] = [
-  {
-    day: "Monday",
-    classes: [{ time: "19:00", name: "Taichi", location: "rodopi" }],
-  },
-  {
-    day: "Tuesday",
-    classes: [
-      { time: "18:30", name: "Hatha Yoga", location: "pirin" },
-      { time: "18:30", name: "Mobility Flow", location: "rodopi" },
-    ],
-  },
-  {
-    day: "Wednesday",
-    classes: [{ time: "20:30", name: "Dance Meditation", location: "rodopi" }],
-  },
-  {
-    day: "Thursday",
-    classes: [
-      { time: "9:30", name: "Qi-gong", location: "rodopi" },
-      { time: "19:00", name: "Taichi", location: "rodopi" },
-      { time: "18:30", name: "Aerial Yoga", location: "pirin" },
-    ],
-  },
-  {
-    day: "Friday",
-    classes: [
-      { time: "19:00", name: "Lotus Face Yoga", location: "rodopi" },
-      { time: "20:30", name: "Lotus Sound Journey", location: "rodopi" },
-    ],
-  },
-  {
-    day: "Saturday",
-    classes: [
-      { time: "11:30", name: "Hatha Yoga", location: "pirin" },
-      { time: "17:00", name: "Aerial Yoga", location: "pirin" },
-      { time: "18:30", name: "Mobility Flow", location: "rodopi" },
-    ],
-  },
-  {
-    day: "Sunday",
-    classes: [{ time: "17:30", name: "Art Workshop", location: "rodopi" }],
-  },
-];
-
-// Week 2 variant: extra evening class on Monday
-const variant2: DaySchedule[] = baseSchedule.map((day) => {
-  if (day.day === "Monday") {
-    return {
-      ...day,
-      classes: [
-        ...day.classes,
-        { time: "20:00", name: "Yin Yoga", location: "pirin" },
-      ],
-    };
-  }
-  return day;
-});
-
-// Week 3 variant: Saturday has different times
-const variant3: DaySchedule[] = baseSchedule.map((day) => {
-  if (day.day === "Saturday") {
-    return {
-      ...day,
-      classes: [
-        { time: "10:00", name: "Hatha Yoga", location: "pirin" },
-        { time: "16:00", name: "Aerial Yoga", location: "pirin" },
-        { time: "18:00", name: "Mobility Flow", location: "rodopi" },
-      ],
-    };
-  }
-  return day;
-});
-
-// Week 4 variant: Friday adds morning class
-const variant4: DaySchedule[] = baseSchedule.map((day) => {
-  if (day.day === "Friday") {
-    return {
-      ...day,
-      classes: [
-        { time: "9:00", name: "Morning Flow", location: "rodopi" },
-        ...day.classes,
-      ],
-    };
-  }
-  return day;
-});
-
-const scheduleVariants = [baseSchedule, variant2, variant3, variant4];
+import { addDays, startOfWeek, endOfWeek, format, parseISO } from "date-fns";
+import type { WeeklySchedule } from "@/types/schedule";
+import { getScheduleVariants } from "@/lib/scheduleStore";
 
 function getWeekStart(d: Date): Date {
   return startOfWeek(d, { weekStartsOn: 1 }); // Monday
@@ -142,6 +45,7 @@ export async function GET(request: NextRequest) {
       rangeEnd = addDays(rangeStart, 90); // ~3 months
     }
 
+    const scheduleVariants = getScheduleVariants();
     const weeks: WeeklySchedule[] = [];
     let cursor = getWeekStart(rangeStart);
     let weekIndex = 0;
@@ -149,7 +53,7 @@ export async function GET(request: NextRequest) {
     while (cursor <= rangeEnd) {
       const weekEnd = getWeekEnd(cursor);
       const schedule =
-        scheduleVariants[weekIndex % scheduleVariants.length] ?? baseSchedule;
+        scheduleVariants[weekIndex % scheduleVariants.length] ?? scheduleVariants[0];
       const weekLabel = `${format(cursor, "MMMM yyyy")} – Week of ${format(cursor, "MMM d")}`;
       weeks.push({
         id: `week-${format(cursor, "yyyy-MM-dd")}`,

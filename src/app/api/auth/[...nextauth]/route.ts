@@ -1,11 +1,8 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-
-// Mock users for Credentials (no DB yet). Replace with Supabase later.
-const MOCK_USERS: { email: string; password: string; name: string }[] = [
-  { email: "demo@lotuslife.com", password: "demo123", name: "Demo User" },
-];
+import { findUserByEmail, addUser, isAdminEmail } from "@/lib/usersStore";
+import type { Role } from "@/types/next-auth";
 
 const providers: NextAuthOptions["providers"] = [
   CredentialsProvider({
@@ -23,20 +20,19 @@ const providers: NextAuthOptions["providers"] = [
         const name = (credentials.name as string)?.trim() || credentials.email.split("@")[0];
         const password = (credentials.password as string)?.trim();
         if (!password) return null;
-        const existing = MOCK_USERS.find((u) => u.email === credentials.email);
+        const existing = findUserByEmail(credentials.email);
         if (existing) return null;
-        MOCK_USERS.push({
+        addUser({
           email: credentials.email,
           password,
           name,
+          role: "user",
         });
-        return { id: credentials.email, email: credentials.email, name };
+        return { id: credentials.email, email: credentials.email, name, role: "user" as Role };
       }
-      const user = MOCK_USERS.find(
-        (u) => u.email === credentials.email && u.password === credentials.password
-      );
-      if (!user) return null;
-      return { id: user.email, email: user.email, name: user.name };
+      const user = findUserByEmail(credentials.email);
+      if (!user || user.password !== credentials.password) return null;
+      return { id: user.email, email: user.email, name: user.name, role: user.role };
     },
   }),
 ];
@@ -61,12 +57,14 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
+        token.role = user.role ?? (isAdminEmail(user.email ?? "") ? "admin" : "user");
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { id?: string }).id = token.id as string;
+        (session.user as { id?: string; role?: Role }).id = token.id as string;
+        (session.user as { role?: Role }).role = (token.role as Role) ?? "user";
       }
       return session;
     },
