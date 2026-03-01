@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Sparkles, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Sparkles, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   MOCK_CURRENT_MEMBERSHIP,
@@ -121,7 +121,16 @@ export default function PanelPage() {
         className="sticky top-0 z-10 -mx-4 px-4 pt-2 pb-2 bg-cream border-b border-border mb-8"
         style={{ marginTop: "-0.5rem" }}
       >
-        <div className="flex gap-1">
+        <div className="flex items-center gap-5">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-charcoal-light hover:text-sage font-body text-sm transition-colors"
+            aria-label="Back to home"
+          >
+            <Home className="w-4 h-4" />
+            Home
+          </Link>
+          <div className="flex gap-1">
           <button
             type="button"
             onClick={() => setActiveTab("visits")}
@@ -144,6 +153,7 @@ export default function PanelPage() {
           >
             Membership
           </button>
+          </div>
         </div>
       </div>
 
@@ -166,12 +176,6 @@ export default function PanelPage() {
           membershipId={membership}
         />
       )}
-
-      <p className="mt-12 text-center">
-        <Link href="/" className="text-sage hover:underline font-body text-sm">
-          Back to home
-        </Link>
-      </p>
     </div>
   );
 }
