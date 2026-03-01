@@ -222,14 +222,14 @@ const Schedule = () => {
                                 handleOpenSignUp(day.day, cls);
                               }
                             }}
-                            className="group flex justify-between items-center gap-3 rounded-xl py-2 px-3 -mx-3 hover:bg-sage-light/50 transition-colors cursor-pointer"
+                            className="group flex justify-between items-center gap-3 rounded-xl py-2 px-3 -mx-3 cursor-pointer transition-all duration-300 ease-out hover:bg-sage-light/50 hover:pl-4 border-l-2 border-l-transparent hover:border-l-sage/40"
                           >
                             <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <span className="text-sage font-medium font-body text-sm shrink-0">
+                              <span className="text-sage font-medium font-body text-sm shrink-0 transition-colors duration-300 group-hover:text-sage-dark">
                                 {cls.time}
                               </span>
                               <div className="min-w-0">
-                                <p className="text-charcoal font-medium font-body truncate">
+                                <p className="text-charcoal font-medium font-body truncate transition-transform duration-300 ease-out group-hover:translate-x-0.5">
                                   {cls.name}
                                 </p>
                                 <p className="text-charcoal-light text-xs flex items-center gap-1 mt-0.5">
@@ -242,16 +242,16 @@ const Schedule = () => {
                               </div>
                             </div>
                             <div
-                              className={`shrink-0 font-body text-xs ${
+                              className={`shrink-0 font-body text-xs transition-all duration-300 ease-out ${
                                 isSignedUp
                                   ? "text-sage font-medium"
-                                  : "opacity-0 group-hover:opacity-100 transition-opacity"
+                                  : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
                               }`}
                             >
                               {isSignedUp ? (
                                 "Signed up"
                               ) : (
-                                <span className="inline-flex items-center gap-1 bg-sage text-cream px-3 py-1.5 rounded-full">
+                                <span className="inline-flex items-center gap-1 bg-sage text-cream px-3 py-1.5 rounded-full transition-transform duration-200 ease-out group-hover:scale-105">
                                   <UserPlus className="w-3 h-3" />
                                   Sign up
                                 </span>

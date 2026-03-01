@@ -177,38 +177,38 @@ const Events = () => {
                       handleOpenSignUp(evt);
                     }
                   }}
-                  className="group bg-marble rounded-2xl p-6 shadow-soft hover:shadow-elevated transition-all duration-300 border border-border cursor-pointer flex flex-col"
+                  className="group bg-marble rounded-2xl p-6 cursor-pointer flex flex-col border border-border shadow-soft transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-elevated hover:border-sage/25"
                 >
                   <div className="flex-1 min-h-0">
-                    <h3 className="font-display text-2xl text-charcoal mb-2">
+                    <h3 className="font-display text-2xl text-charcoal mb-2 transition-colors duration-300 group-hover:text-charcoal/90">
                       {evt.title}
                     </h3>
-                    <div className="flex items-center gap-2 text-sage font-body text-sm mb-1">
+                    <div className="flex items-center gap-2 text-sage font-body text-sm mb-1 transition-colors duration-300 group-hover:text-sage-dark">
                       <Clock className="w-4 h-4" />
                       {evt.time}
                     </div>
                     {evt.description && (
-                      <p className="text-charcoal-light font-body text-sm">
+                      <p className="text-charcoal-light font-body text-sm transition-colors duration-300 group-hover:text-charcoal-light/90">
                         {evt.description}
                       </p>
                     )}
                   </div>
-                  <div className="flex justify-between items-center gap-3 pt-3 mt-3 border-t border-border">
+                  <div className="flex justify-between items-center gap-3 pt-3 mt-3 border-t border-border transition-colors duration-300 group-hover:border-sage/20">
                     <p className="text-charcoal-light text-sm font-body flex items-center gap-1">
                       <MapPin className="w-4 h-4 shrink-0" />
                       {evt.location}
                     </p>
                     <div
-                      className={`shrink-0 font-body text-xs ${
+                      className={`shrink-0 font-body text-xs transition-all duration-300 ease-out ${
                         isSignedUp
                           ? "text-sage font-medium"
-                          : "opacity-0 group-hover:opacity-100 transition-opacity"
+                          : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
                       }`}
                     >
                       {isSignedUp ? (
                         "Signed up"
                       ) : (
-                        <span className="inline-flex items-center gap-1 bg-sage text-cream px-3 py-1.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 bg-sage text-cream px-3 py-1.5 rounded-full transition-transform duration-200 ease-out group-hover:scale-105">
                           <UserPlus className="w-3 h-3" />
                           Sign up
                         </span>
