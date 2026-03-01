@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Calendar, MapPin, Sparkles, ArrowRight, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import {
   type PricingTierId,
 } from "@/lib/pricing";
 import { Check } from "lucide-react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 import { useGsapScrollRevealStagger } from "@/hooks/useGsapScrollReveal";
 
 // Use mock preset: "none" | "one" | "many" to demo different states
@@ -44,12 +46,35 @@ function formatAttendedAt(iso: string) {
   });
 }
 
+/** Wraps a visit card and animates it only on mount (so "View more" only animates new items). */
+function AnimateVisitCard({
+  delay,
+  children,
+}: {
+  delay: number;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useGSAP(
+    () => {
+      const el = ref.current;
+      if (!el) return;
+      gsap.fromTo(
+        el,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.5, delay, ease: "power2.out" }
+      );
+    },
+    { scope: ref, dependencies: [] }
+  );
+  return <div ref={ref}>{children}</div>;
+}
+
 export default function PanelPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"visits" | "membership">("visits");
   const [visibleCount, setVisibleCount] = useState(VISITS_PAGE_SIZE);
-  const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -73,19 +98,6 @@ export default function PanelPage() {
   const loadMore = useCallback(() => {
     setVisibleCount((prev) => Math.min(prev + VISITS_PAGE_SIZE, total));
   }, [total]);
-
-  useEffect(() => {
-    if (!hasMore || !sentinelRef.current) return;
-    const el = sentinelRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadMore();
-      },
-      { root: null, rootMargin: "100px", threshold: 0 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasMore, loadMore]);
 
   // Reset visible count when preset or data changes
   useEffect(() => {
@@ -164,7 +176,7 @@ export default function PanelPage() {
           attendances={displayedAttendances}
           total={total}
           hasMore={hasMore}
-          sentinelRef={sentinelRef}
+          onLoadMore={loadMore}
         />
       )}
       {activeTab === "membership" && (
@@ -184,24 +196,17 @@ interface VisitsTabContentProps {
   attendances: MockAttendance[];
   total: number;
   hasMore: boolean;
-  sentinelRef: React.RefObject<HTMLDivElement | null>;
+  onLoadMore: () => void;
 }
+
+const VISIT_STAGGER = 0.08;
 
 function VisitsTabContent({
   attendances,
   total,
   hasMore,
-  sentinelRef,
+  onLoadMore,
 }: VisitsTabContentProps) {
-  const listRef = useGsapScrollRevealStagger<HTMLDivElement>({
-    y: 16,
-    opacity: 0,
-    duration: 0.5,
-    stagger: 0.08,
-    childSelector: ":scope > *",
-    dependencies: [attendances.length],
-  });
-
   if (attendances.length === 0) {
     return (
       <div className="bg-cream rounded-2xl p-8 border border-border text-center">
@@ -226,40 +231,48 @@ function VisitsTabContent({
         <Calendar className="w-6 h-6 text-sage" />
         Your visits
       </h2>
-      <div ref={listRef} className="space-y-3">
-        {attendances.map((att) => (
-          <div
+      <div className="space-y-3">
+        {attendances.map((att, index) => (
+          <AnimateVisitCard
             key={att.id}
-            className="bg-cream rounded-xl p-4 border border-border"
+            delay={(index % VISITS_PAGE_SIZE) * VISIT_STAGGER}
           >
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span
-                className={`text-xs font-body px-2 py-1 rounded-full ${
-                  att.type === "event"
-                    ? "bg-sage-light text-sage-dark"
-                    : "bg-charcoal/10 text-charcoal"
-                }`}
-              >
-                {att.type === "event" ? "Event" : "Class"}
-              </span>
-              <span className="font-body font-medium text-charcoal">
-                {att.title}
-              </span>
+            <div className="bg-cream rounded-xl p-4 border border-border">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span
+                  className={`text-xs font-body px-2 py-1 rounded-full ${
+                    att.type === "event"
+                      ? "bg-sage-light text-sage-dark"
+                      : "bg-charcoal/10 text-charcoal"
+                  }`}
+                >
+                  {att.type === "event" ? "Event" : "Class"}
+                </span>
+                <span className="font-body font-medium text-charcoal">
+                  {att.title}
+                </span>
+              </div>
+              <p className="text-charcoal-light text-sm font-body mb-1">
+                {formatDate(att.date)} · {att.time}
+              </p>
+              <p className="text-charcoal-light text-sm font-body flex items-center gap-1 mb-1">
+                <MapPin className="w-3 h-3 shrink-0" />
+                {att.location}
+              </p>
+              <p className="text-charcoal-light/80 text-xs font-body">
+                Attended on {formatAttendedAt(att.attendedAt)}
+              </p>
             </div>
-            <p className="text-charcoal-light text-sm font-body mb-1">
-              {formatDate(att.date)} · {att.time}
-            </p>
-            <p className="text-charcoal-light text-sm font-body flex items-center gap-1 mb-1">
-              <MapPin className="w-3 h-3 shrink-0" />
-              {att.location}
-            </p>
-            <p className="text-charcoal-light/80 text-xs font-body">
-              Attended on {formatAttendedAt(att.attendedAt)}
-            </p>
-          </div>
+          </AnimateVisitCard>
         ))}
       </div>
-      {hasMore && <div ref={sentinelRef} className="h-4" aria-hidden />}
+      {hasMore && (
+        <div className="mt-6 flex justify-center">
+          <Button variant="outline" onClick={onLoadMore} className="border-sage text-sage hover:bg-sage-light">
+            View more
+          </Button>
+        </div>
+      )}
     </section>
   );
 }
