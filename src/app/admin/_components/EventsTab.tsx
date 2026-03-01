@@ -112,6 +112,9 @@ export function EventsTab() {
           <Plus className="w-4 h-4 mr-2" /> Add event
         </Button>
       </div>
+      {events.length === 0 ? (
+        <p className="text-charcoal-light">No events yet.</p>
+      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -137,6 +140,7 @@ export function EventsTab() {
           ))}
         </TableBody>
       </Table>
+      )}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>

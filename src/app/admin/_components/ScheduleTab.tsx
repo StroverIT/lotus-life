@@ -98,6 +98,9 @@ export function ScheduleTab() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-charcoal-light">Base weekly schedule. Edit a day to change its classes.</p>
+      {schedule.length === 0 ? (
+        <p className="text-charcoal-light">No schedule data.</p>
+      ) : (
       <div className="space-y-4">
         {display.map((day) => (
           <div key={day.day} className="border rounded-lg p-4 bg-cream">
@@ -160,6 +163,7 @@ export function ScheduleTab() {
           </div>
         ))}
       </div>
+      )}
       <div className="mt-8">
         <h3 className="font-medium text-charcoal mb-2">Schedule sign-ups</h3>
         {scheduleSignUps.length === 0 ? (

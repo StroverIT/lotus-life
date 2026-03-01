@@ -76,6 +76,10 @@ export function UsersTab() {
 
   if (loading) return <p className="text-charcoal-light">Loading users…</p>;
 
+  if (users.length === 0) {
+    return <p className="text-charcoal-light">No users yet.</p>;
+  }
+
   return (
     <div className="space-y-4">
       <Table>

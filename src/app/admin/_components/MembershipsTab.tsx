@@ -114,6 +114,17 @@ function TiersSubTab() {
 
   if (loading) return <p className="text-charcoal-light">Loading tiers…</p>;
 
+  if (tiers.length === 0) {
+    return (
+      <div className="space-y-4">
+        <p className="text-charcoal-light">No pricing tiers yet.</p>
+        <Button onClick={() => { setEditingId(null); setForm({ name: "", price: 0, features: [], highlighted: false }); setFeaturesText(""); setOpen(true); }}>
+          <Plus className="w-4 h-4 mr-2" /> Add tier
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -250,6 +261,10 @@ function UserAssignmentsSubTab() {
 
   if (loading) return <p className="text-charcoal-light">Loading…</p>;
 
+  if (assignments.length === 0 && users.length === 0 && tiers.length === 0) {
+    return <p className="text-charcoal-light">No users or tiers to assign yet.</p>;
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2 p-4 border rounded-lg bg-cream">
@@ -273,6 +288,9 @@ function UserAssignmentsSubTab() {
         </div>
         <Button onClick={assign} disabled={submitting || !assignUserId || !assignTierId}>Assign</Button>
       </div>
+      {assignments.length === 0 ? (
+        <p className="text-charcoal-light">No user assignments yet.</p>
+      ) : (
       <Table>
         <TableHeader>
           <TableRow>
@@ -293,6 +311,7 @@ function UserAssignmentsSubTab() {
           ))}
         </TableBody>
       </Table>
+      )}
       <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
