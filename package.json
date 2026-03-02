@@ -10,7 +10,10 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:push:prod": "sh -c 'set -a && . ./.env.production && set +a && prisma db push'",
+    "db:migrate:prod": "sh -c 'set -a && . ./.env.production && set +a && prisma migrate deploy'",
+    "sync:prod": "tsx scripts/sync-to-production.ts"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
@@ -86,6 +89,7 @@
     "eslint-config-next": "^16.1.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "tsx": "^4.21.0"
   }
 }
