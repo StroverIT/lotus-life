@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import type { Event } from "@/types/schedule";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function getTodayISO(): string {
   return format(new Date(), "yyyy-MM-dd");
@@ -162,9 +163,25 @@ const Events = () => {
         </AnimateIn>
 
         {loading ? (
-          <p className="text-center text-charcoal-light font-body">
-            Loading events…
-          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <article
+                key={index}
+                className="bg-marble rounded-2xl p-6 flex flex-col border border-border shadow-soft"
+              >
+                <div className="flex-1 min-h-0 space-y-3">
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+                <div className="flex justify-between items-center gap-3 pt-3 mt-3 border-t border-border">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-7 w-24 rounded-full" />
+                </div>
+              </article>
+            ))}
+          </div>
         ) : events.length === 0 ? (
           <p className="text-center text-charcoal-light font-body italic">
             No events on this date.

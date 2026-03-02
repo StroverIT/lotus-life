@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -200,9 +201,33 @@ const Schedule = () => {
 
         {/* Schedule Grid */}
         {loading ? (
-          <p className="text-center text-charcoal-light font-body">
-            Loading schedule…
-          </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-cream rounded-2xl p-6 shadow-soft"
+              >
+                <Skeleton className="h-6 w-32 mb-4" />
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, classIndex) => (
+                    <div
+                      key={classIndex}
+                      className="flex justify-between items-center gap-3 rounded-xl py-2"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Skeleton className="h-4 w-12" />
+                        <div className="min-w-0 space-y-1">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-7 w-20 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div ref={gridRef} className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredSchedule.map((day) => (
@@ -222,60 +247,60 @@ const Schedule = () => {
                         <div
                           key={`${cls.name}-${index}`}
                           role="button"
-                            tabIndex={0}
-                            onClick={() => handleOpenSignUp(day.day, cls)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                handleOpenSignUp(day.day, cls);
-                              }
-                            }}
-                            className="group flex justify-between items-center gap-3 rounded-xl py-2 px-3 -mx-3 cursor-pointer transition-all duration-300 ease-out hover:bg-sage-light/50 hover:pl-4 border-l-2 border-l-transparent hover:border-l-sage/40"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <span className="text-sage font-medium font-body text-sm shrink-0 transition-colors duration-300 group-hover:text-sage-dark">
-                                {cls.time}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="text-charcoal font-medium font-body truncate transition-transform duration-300 ease-out group-hover:translate-x-0.5">
-                                  {cls.name}
-                                </p>
-                                <p className="text-charcoal-light text-xs flex items-center gap-1 mt-0.5">
-                                  <MapPin className="w-3 h-3 shrink-0" />
-                                  {cls.location === "pirin"
-                                    ? "Pirin"
-                                    : "Rodopi"}{" "}
-                                  Hall
-                                </p>
-                              </div>
-                            </div>
-                            <div
-                              className={`shrink-0 font-body text-xs transition-all duration-300 ease-out ${
-                                isSignedUp
-                                  ? "text-sage font-medium"
-                                  : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
-                              }`}
-                            >
-                              {isSignedUp ? (
-                                "Signed up"
-                              ) : (
-                                <span className="inline-flex items-center gap-1 bg-sage text-cream px-3 py-1.5 rounded-full transition-transform duration-200 ease-out group-hover:scale-105">
-                                  <UserPlus className="w-3 h-3" />
-                                  Sign up
-                                </span>
-                              )}
+                          tabIndex={0}
+                          onClick={() => handleOpenSignUp(day.day, cls)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleOpenSignUp(day.day, cls);
+                            }
+                          }}
+                          className="group flex justify-between items-center gap-3 rounded-xl py-2 px-3 -mx-3 cursor-pointer transition-all duration-300 ease-out hover:bg-sage-light/50 hover:pl-4 border-l-2 border-l-transparent hover:border-l-sage/40"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <span className="text-sage font-medium font-body text-sm shrink-0 transition-colors duration-300 group-hover:text-sage-dark">
+                              {cls.time}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-charcoal font-medium font-body truncate transition-transform duration-300 ease-out group-hover:translate-x-0.5">
+                                {cls.name}
+                              </p>
+                              <p className="text-charcoal-light text-xs flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-3 h-3 shrink-0" />
+                                {cls.location === "pirin"
+                                  ? "Pirin"
+                                  : "Rodopi"}{" "}
+                                Hall
+                              </p>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-charcoal-light text-sm italic">
-                      No classes at selected location
-                    </p>
-                  )}
-                </div>
-              ))}
+                          <div
+                            className={`shrink-0 font-body text-xs transition-all duration-300 ease-out ${
+                              isSignedUp
+                                ? "text-sage font-medium"
+                                : "translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
+                            }`}
+                          >
+                            {isSignedUp ? (
+                              "Signed up"
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-sage text-cream px-3 py-1.5 rounded-full transition-transform duration-200 ease-out group-hover:scale-105">
+                                <UserPlus className="w-3 h-3" />
+                                Sign up
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-charcoal-light text-sm italic">
+                    No classes at selected location
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
