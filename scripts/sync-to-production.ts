@@ -23,6 +23,7 @@ import "dotenv/config";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 // ----- Load env from .env.production -----
 function loadProductionEnv(): Record<string, string> {
@@ -65,12 +66,14 @@ if (!sourceDatabaseUrl || !targetDatabaseUrl) {
 }
 
 // Use explicit URLs for source/target so we can point them at different databases.
+const sourceAdapter = new PrismaPg({ connectionString: sourceDatabaseUrl });
 const prismaSource = new PrismaClient({
-  datasources: { db: { url: sourceDatabaseUrl } },
+  adapter: sourceAdapter,
 });
 
+const targetAdapter = new PrismaPg({ connectionString: targetDatabaseUrl });
 const prismaTarget = new PrismaClient({
-  datasources: { db: { url: targetDatabaseUrl } },
+  adapter: targetAdapter,
 });
 
 const P2021_TABLE_DOES_NOT_EXIST = "P2021";
