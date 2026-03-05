@@ -1,138 +1,93 @@
-"use client";
-
-import { Phone, MapPin, Clock } from "lucide-react";
-import { AnimateIn } from "@/components/AnimateIn";
-
-const LotusIcon = () => (
-  <svg viewBox="0 0 80 80" className="w-10 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path 
-      d="M40 15 C40 15, 30 30, 30 45 C30 55, 35 60, 40 60 C45 60, 50 55, 50 45 C50 30, 40 15, 40 15Z" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      fill="none"
-    />
-    <path 
-      d="M25 25 C25 25, 20 40, 25 50 C28 55, 35 55, 40 50" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      fill="none"
-    />
-    <path 
-      d="M55 25 C55 25, 60 40, 55 50 C52 55, 45 55, 40 50" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      fill="none"
-    />
-    <path 
-      d="M15 35 C15 35, 15 48, 25 52 C30 54, 38 50, 40 45" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      fill="none"
-    />
-    <path 
-      d="M65 35 C65 35, 65 48, 55 52 C50 54, 42 50, 40 45" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      fill="none"
-    />
-  </svg>
-);
+import { Link } from "react-router-dom";
+import { Phone, Mail, MapPin, Instagram, Facebook } from "lucide-react";
+import lotusLogo from "@/assets/lotus-life-logo.svg";
 
 const Footer = () => {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer id="contact" className="bg-charcoal text-cream">
-      <div className="container mx-auto px-4">
-        {/* Main Footer Content */}
-        <div className="py-16 grid md:grid-cols-2 lg:grid-cols-4 gap-12">
+    <footer className="bg-foreground text-primary-foreground">
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
-          <AnimateIn y={20} duration={0.6}>
-            <div className="flex items-center gap-3 mb-4">
-              <LotusIcon />
-              <span className="font-display text-2xl">Lotus Life</span>
+          <div className="md:col-span-1">
+            <div className="flex items-center gap-3 mb-3">
+              <img src={lotusLogo} alt="Lotus Life logo" className="w-10 h-10 invert" />
+              <h3 className="font-display text-3xl font-semibold">Lotus Life</h3>
             </div>
-            <p className="text-cream/70 text-sm leading-relaxed mb-4">
-              breathe • move • create
+            <p className="text-primary-foreground/60 text-sm leading-relaxed">
+              breathe · move · create
             </p>
-            <p className="text-cream/60 text-sm">
-              Your sanctuary for holistic wellness in the heart of Bansko, Bulgaria.
+            <p className="text-primary-foreground/50 text-sm mt-4">
+              Wellness studio in the heart of Bansko, Bulgaria.
             </p>
-          </AnimateIn>
-
-          {/* Locations */}
-          <AnimateIn y={20} delay={0.1} duration={0.6}>
-            <h4 className="font-display text-lg mb-4">Our Studios</h4>
-            <div className="space-y-4">
-              <div>
-                <p className="font-medium mb-1">Pirin Hall</p>
-                <p className="text-cream/60 text-sm flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Nayden Gerov 34, Str.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Rodopi Hall</p>
-                <p className="text-cream/60 text-sm flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Nayden Gerov 36, Str.
-                </p>
-              </div>
-            </div>
-          </AnimateIn>
-
-          {/* Contact */}
-          <AnimateIn y={20} delay={0.2} duration={0.6}>
-            <h4 className="font-display text-lg mb-4">Contact</h4>
-            <div className="space-y-3">
-              <a
-                href="tel:+359883317785"
-                className="text-cream/80 text-sm flex items-center gap-2 hover:text-cream transition-colors"
-              >
-                <Phone className="w-4 h-4" />
-                +359 883 317 785
-              </a>
-              <p className="text-cream/60 text-sm flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Pre-booking required
-              </p>
-            </div>
-          </AnimateIn>
+          </div>
 
           {/* Quick Links */}
-          <AnimateIn y={20} delay={0.3} duration={0.6}>
-            <h4 className="font-display text-lg mb-4">Quick Links</h4>
-            <div className="space-y-2">
-              <a
-                href="#schedule"
-                className="block text-cream/70 text-sm hover:text-cream transition-colors"
-              >
-                Schedule
+          <div>
+            <h4 className="font-display text-lg font-semibold mb-4">Explore</h4>
+            <div className="flex flex-col gap-2">
+              {[
+                { label: "Yoga Schedule", to: "/yoga" },
+                { label: "Massage Therapies", to: "/massage" },
+                { label: "Memberships", to: "/memberships" },
+                { label: "About Us", to: "/about" },
+                { label: "Contact", to: "/contact" },
+              ].map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="text-sm text-primary-foreground/60 hover:text-accent transition-colors"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h4 className="font-display text-lg font-semibold mb-4">Contact</h4>
+            <div className="flex flex-col gap-3 text-sm text-primary-foreground/60">
+              <a href="tel:+359883317785" className="flex items-center gap-2 hover:text-accent transition-colors">
+                <Phone className="w-4 h-4 shrink-0" />
+                +359 883 317 785
               </a>
-              <a
-                href="#pricing"
-                className="block text-cream/70 text-sm hover:text-cream transition-colors"
-              >
-                Memberships
+              <a href="mailto:hello@lotuslife.bg" className="flex items-center gap-2 hover:text-accent transition-colors">
+                <Mail className="w-4 h-4 shrink-0" />
+                hello@lotuslife.bg
               </a>
-              <a
-                href="#about"
-                className="block text-cream/70 text-sm hover:text-cream transition-colors"
-              >
-                About Us
+              <div className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Bansko, Bulgaria</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Halls */}
+          <div>
+            <h4 className="font-display text-lg font-semibold mb-4">Our Studios</h4>
+            <div className="flex flex-col gap-4 text-sm text-primary-foreground/60">
+              <div>
+                <p className="text-primary-foreground/80 font-medium">Pirin Hall</p>
+                <p>Nayden Gerov 34, Str., Bansko</p>
+              </div>
+              <div>
+                <p className="text-primary-foreground/80 font-medium">Rodopi Hall</p>
+                <p>Nayden Gerov 36, Str., Bansko</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <a href="#" className="p-2 rounded-full bg-primary-foreground/10 hover:bg-accent/30 transition-colors">
+                <Instagram className="w-4 h-4" />
+              </a>
+              <a href="#" className="p-2 rounded-full bg-primary-foreground/10 hover:bg-accent/30 transition-colors">
+                <Facebook className="w-4 h-4" />
               </a>
             </div>
-          </AnimateIn>
+          </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-cream/10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-cream/50 text-sm">
-            © {currentYear} Lotus Life. All rights reserved.
-          </p>
-          <p className="text-cream/50 text-sm">
-            Bansko, Bulgaria
-          </p>
+        <div className="border-t border-primary-foreground/10 mt-12 pt-6 text-center text-xs text-primary-foreground/40">
+          © {new Date().getFullYear()} Lotus Life. All rights reserved.
         </div>
       </div>
     </footer>
