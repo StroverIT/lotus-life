@@ -1,5 +1,7 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+ "use client";
+
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 import { Phone, Mail, MapPin, MessageCircle, Send } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -11,6 +13,32 @@ const WHATSAPP_URL = "https://wa.me/359883317785";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (heroRef.current) {
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+      );
+    }
+    if (contentRef.current) {
+      gsap.fromTo(
+        contentRef.current.children,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.1,
+        },
+      );
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +58,7 @@ const ContactPage = () => {
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80')" }}
         />
         <div className="absolute inset-0 bg-black/60" />
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
             <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
               Get in Touch
             </h1>
@@ -44,13 +71,9 @@ const ContactPage = () => {
 
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
+          <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
             {/* Contact Info */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
+            <div>
               <h2 className="font-display text-3xl mb-8">Let's Connect</h2>
 
               <div className="space-y-6 mb-10">
@@ -109,14 +132,10 @@ const ContactPage = () => {
                   <p>Sunday: 09:30 – 19:00</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
             {/* Contact Form */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-            >
+            <div>
               <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-card p-8">
                 <h2 className="font-display text-3xl mb-6">Send a Message</h2>
                 <div className="space-y-5">
@@ -154,7 +173,7 @@ const ContactPage = () => {
                   </Button>
                 </div>
               </form>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

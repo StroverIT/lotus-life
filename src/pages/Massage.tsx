@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+ "use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { gsap } from "gsap";
 import { Clock, Check, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,32 @@ import MassageBookingDialog from "@/components/MassageBookingDialog";
 const MassagePage = () => {
   const [selectedMassage, setSelectedMassage] = useState<MassageType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (heroRef.current) {
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+      );
+    }
+    if (gridRef.current) {
+      gsap.fromTo(
+        gridRef.current.children,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.08,
+        },
+      );
+    }
+  }, []);
 
   const handleBook = (massage: MassageType) => {
     setSelectedMassage(massage);
@@ -26,8 +54,7 @@ const MassagePage = () => {
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-accent/20 blur-3xl" />
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
             <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
               Massage Therapy
             </h1>
@@ -46,14 +73,10 @@ const MassagePage = () => {
             Each session is tailored to your needs. All treatments use organic, locally-sourced mountain botanicals.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {massageTypes.map((massage, i) => (
-              <motion.div
+              <div
                 key={massage.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
                 className="group rounded-xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all flex flex-col"
               >
                 <div className="flex items-center justify-between mb-4">
@@ -83,7 +106,7 @@ const MassagePage = () => {
                 >
                   Book Now
                 </Button>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -91,7 +114,7 @@ const MassagePage = () => {
             <p className="text-muted-foreground font-body text-sm mb-4">
               Members enjoy up to 20% off all massage treatments
             </p>
-            <Link to="/memberships" className="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all font-body text-sm">
+            <Link href="/memberships" className="inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all font-body text-sm">
               View Memberships <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

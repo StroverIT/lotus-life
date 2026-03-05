@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+ "use client";
+
+import { useMemo, useState } from "react";
 import { format, parse } from "date-fns";
 import { Sun, Snowflake, Edit, Trash2, Plus, Clock, MapPin, User, Crown, Users, Mail, Phone, Calendar, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -162,12 +163,7 @@ const AdminPage = () => {
             {/* Yoga Schedule */}
             <TabsContent value="schedule" className="space-y-8">
               {schedule.map((day, dayIndex) => (
-                <motion.div
-                  key={day.day}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: dayIndex * 0.05 }}
-                >
+                <div key={day.day}>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-display text-2xl">{day.day}</h3>
                     <Button variant="outline" size="sm" className="text-xs" onClick={() => setAddClassDayIndex(dayIndex)}>
@@ -216,7 +212,7 @@ const AdminPage = () => {
                       </TableBody>
                     </Table>
                   )}
-                </motion.div>
+                </div>
               ))}
             </TabsContent>
 

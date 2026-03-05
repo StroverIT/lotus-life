@@ -1,5 +1,8 @@
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+ "use client";
+
+import Link from "next/link";
+import { useEffect, useRef } from "react";
+import { gsap } from "gsap";
 import { Check, Star } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -9,6 +12,32 @@ import { cn } from "@/lib/utils";
 const WHATSAPP_URL = "https://wa.me/359883317785";
 
 const MembershipsPage = () => {
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const cardsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (heroRef.current) {
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+      );
+    }
+    if (cardsRef.current) {
+      gsap.fromTo(
+        cardsRef.current.children,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          ease: "power3.out",
+          stagger: 0.1,
+        },
+      );
+    }
+  }, []);
+
   return (
     <Layout>
       {/* Hero */}
@@ -18,8 +47,7 @@ const MembershipsPage = () => {
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=1920&q=80')" }}
         />
         <div className="absolute inset-0 bg-black/60" />
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
             <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
               Memberships
             </h1>
@@ -33,14 +61,10 @@ const MembershipsPage = () => {
       {/* Pricing */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {memberships.map((plan, i) => (
-              <motion.div
+          <div ref={cardsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {memberships.map((plan) => (
+              <div
                 key={plan.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
                 className={cn(
                   "relative rounded-2xl p-8 flex flex-col",
                   plan.highlighted
@@ -88,7 +112,7 @@ const MembershipsPage = () => {
                     Get Started
                   </a>
                 </Button>
-              </motion.div>
+              </div>
             ))}
           </div>
 

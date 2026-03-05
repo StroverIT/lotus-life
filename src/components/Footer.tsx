@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Phone, Mail, MapPin, Instagram, Facebook } from "lucide-react";
-import lotusLogo from "@/assets/lotus-life-logo.svg";
+import LotusLogo from "./svg/LotusLogo";
 
 const Footer = () => {
   return (
@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-3">
-              <img src={lotusLogo} alt="Lotus Life logo" className="w-10 h-10 invert" />
+              <LotusLogo className="w-24 h-36" color="#fff" />
               <h3 className="font-display text-3xl font-semibold">Lotus Life</h3>
             </div>
             <p className="text-primary-foreground/60 text-sm leading-relaxed">
@@ -34,7 +34,7 @@ const Footer = () => {
               ].map((link) => (
                 <Link
                   key={link.to}
-                  to={link.to}
+                  href={link.to}
                   className="text-sm text-primary-foreground/60 hover:text-accent transition-colors"
                 >
                   {link.label}

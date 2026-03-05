@@ -1,10 +1,12 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Phone, Leaf, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import lotusLogo from "@/assets/lotus-life-logo.svg";
+import LotusLogo from "./svg/LotusLogo";
 import {
   Dialog,
   DialogContent,
@@ -21,8 +23,6 @@ const navLinks = [
   { label: "About", to: "/about" },
   { label: "Contact", to: "/contact" },
 ];
-
-"use client";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -42,9 +42,9 @@ const Navbar = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2">
-              <img src={lotusLogo} alt="Lotus Life logo" className="w-8 h-8" />
-              <span className="font-display text-2xl md:text-3xl font-semibold text-gradient-purple">
+            <Link href="/" className="flex items-center gap-2">
+              <LotusLogo className="w-24 h-36" />
+              <span className="font-display text-2xl md:text-3xl font-semibold text-gradient-purple -ml-5">
                 Lotus Life
               </span>
             </Link>
@@ -54,10 +54,10 @@ const Navbar = () => {
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
-                  to={link.to}
+                  href={link.to}
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                    location.pathname === link.to
+                    pathname === link.to
                       ? "bg-primary/10 text-primary"
                       : "text-foreground/70 hover:text-primary hover:bg-primary/5"
                   )}
@@ -69,14 +69,23 @@ const Navbar = () => {
 
             {/* CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <a href="tel:+359883317785" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="tel:+359883317785"
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 <Phone className="w-4 h-4" />
                 +359 883 317 785
               </a>
-              <Link to="/my-account" className="p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all">
+              <Link
+                href="/my-account"
+                className="p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all"
+              >
                 <User className="w-5 h-5" />
               </Link>
-              <Button className="gradient-purple text-primary-foreground border-0 hover:opacity-90" onClick={() => setBookOpen(true)}>
+              <Button
+                className="gradient-purple text-primary-foreground border-0 hover:opacity-90"
+                onClick={() => setBookOpen(true)}
+              >
                 Book Now
               </Button>
             </div>
@@ -94,31 +103,36 @@ const Navbar = () => {
         {/* Mobile menu */}
         {isOpen && (
           <div className="md:hidden glass-purple border-t border-border overflow-hidden">
-              <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setIsOpen(false)}
-                    className={cn(
-                      "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                      pathname === link.to
-                        ? "bg-primary/10 text-primary"
-                        : "text-foreground/70 hover:text-primary"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <div className="mt-2 pt-2 border-t border-border">
-                  <a href="tel:+359883317785" className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
-                    <Phone className="w-4 h-4" />
-                    +359 883 317 785
-                  </a>
-                  <Button className="w-full mt-2 gradient-purple text-primary-foreground border-0" onClick={() => setBookOpen(true)}>
-                    Book Now
-                  </Button>
-                </div>
+            <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  href={link.to}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                    pathname === link.to
+                      ? "bg-primary/10 text-primary"
+                      : "text-foreground/70 hover:text-primary"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="mt-2 pt-2 border-t border-border">
+                <a
+                  href="tel:+359883317785"
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground"
+                >
+                  <Phone className="w-4 h-4" />
+                  +359 883 317 785
+                </a>
+                <Button
+                  className="w-full mt-2 gradient-purple text-primary-foreground border-0"
+                  onClick={() => setBookOpen(true)}
+                >
+                  Book Now
+                </Button>
               </div>
             </div>
           </div>
@@ -129,7 +143,9 @@ const Navbar = () => {
       <Dialog open={bookOpen} onOpenChange={setBookOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-display text-2xl">Book Now</DialogTitle>
+            <DialogTitle className="font-display text-2xl">
+              Book Now
+            </DialogTitle>
             <DialogDescription className="font-body">
               What would you like to book?
             </DialogDescription>
@@ -143,7 +159,9 @@ const Navbar = () => {
                 <Leaf className="w-6 h-6 text-primary-foreground" />
               </div>
               <h3 className="font-display text-xl mb-1">Yoga</h3>
-              <p className="text-muted-foreground text-xs font-body">Classes, workshops & events</p>
+              <p className="text-muted-foreground text-xs font-body">
+                Classes, workshops & events
+              </p>
             </button>
             <button
               onClick={() => handleBookChoice("/massage")}
@@ -153,7 +171,9 @@ const Navbar = () => {
                 <Heart className="w-6 h-6 text-primary-foreground" />
               </div>
               <h3 className="font-display text-xl mb-1">Massage</h3>
-              <p className="text-muted-foreground text-xs font-body">Therapies & treatments</p>
+              <p className="text-muted-foreground text-xs font-body">
+                Therapies & treatments
+              </p>
             </button>
           </div>
         </DialogContent>

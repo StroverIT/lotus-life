@@ -1,5 +1,7 @@
-import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
+ "use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "gsap";
 import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpRight, Sparkles } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { sampleVisits, Visit } from "@/data/visits";
 import { memberships } from "@/data/memberships";
 import { cn } from "@/lib/utils";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 // Simulated current membership (null = no membership)
 const currentMembershipId: string | null = "essence";
@@ -41,8 +43,23 @@ function formatDate(iso: string): string {
 }
 
 const UserPanel = () => {
-  const guestRaw = localStorage.getItem("lotus-life-guest");
-  const guest = guestRaw ? JSON.parse(guestRaw) : null;
+  const [guest, setGuest] = useState<{ name?: string; email?: string } | null>(null);
+
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const guestRaw = window.localStorage.getItem("lotus-life-guest");
+      setGuest(guestRaw ? JSON.parse(guestRaw) : null);
+    }
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+      );
+    }
+  }, []);
 
   const grouped = useMemo(() => {
     const g = groupByMonth(sampleVisits);
@@ -60,8 +77,7 @@ const UserPanel = () => {
       <section className="relative py-20 md:py-28 overflow-hidden">
         <div className="absolute inset-0 bg-secondary" />
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/20 blur-3xl" />
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div ref={headerRef} className="relative z-10 container mx-auto px-4 text-center">
             <div className="w-20 h-20 rounded-full gradient-purple flex items-center justify-center mx-auto mb-6">
               <UserIcon className="w-9 h-9 text-primary-foreground" />
             </div>
@@ -107,11 +123,8 @@ const UserPanel = () => {
 
                     <div className="space-y-3">
                       {visits.map((v) => (
-                        <motion.div
+                        <div
                           key={v.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          whileInView={{ opacity: 1, y: 0 }}
-                          viewport={{ once: true }}
                           className="rounded-xl border border-border bg-card p-4 hover:border-primary/20 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-3">
