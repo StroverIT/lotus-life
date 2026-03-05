@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -19,6 +19,7 @@ const YogaPage = () => {
   const scheduleRef = useRef<HTMLDivElement | null>(null);
   const eventsRef = useRef<HTMLDivElement | null>(null);
 
+  // Initial page load animations (run once)
   useEffect(() => {
     if (heroRef.current) {
       gsap.fromTo(
@@ -27,13 +28,7 @@ const YogaPage = () => {
         { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
       );
     }
-    if (scheduleRef.current) {
-      gsap.fromTo(
-        scheduleRef.current,
-        { opacity: 0, y: 10 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
-      );
-    }
+
     if (eventsRef.current) {
       gsap.fromTo(
         eventsRef.current.children,
@@ -44,6 +39,27 @@ const YogaPage = () => {
           duration: 0.6,
           ease: "power3.out",
           stagger: 0.1,
+        },
+      );
+    }
+  }, []);
+
+  // Animate only the schedule list when the selected day changes
+  useEffect(() => {
+    if (scheduleRef.current) {
+      // Ensure cards start hidden before animating
+      gsap.set(scheduleRef.current.children, { opacity: 0, y: 16 });
+
+      // Animate the individual class cards with a smooth stagger
+      gsap.fromTo(
+        scheduleRef.current.children,
+        { opacity: 0, y: 16 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.08,
         },
       );
     }
@@ -128,7 +144,7 @@ const YogaPage = () => {
           </div>
 
           <p className="text-center text-sm text-muted-foreground mt-8 font-body">
-            Single class: <span className="text-primary font-semibold">€10</span> · 
+            Single class: <span className="text-primary font-semibold">€10</span> ·
             <Link href="/memberships" className="text-primary hover:underline ml-1">View memberships →</Link>
           </p>
         </div>
