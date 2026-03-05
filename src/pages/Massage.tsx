@@ -1,13 +1,14 @@
- "use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { gsap } from "gsap";
 import { Clock, Check, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { massageTypes, type MassageType } from "@/data/massages";
 import MassageBookingDialog from "@/components/MassageBookingDialog";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp, staggerChildren } from "@/lib/animations";
 
 const MassagePage = () => {
   const [selectedMassage, setSelectedMassage] = useState<MassageType | null>(null);
@@ -15,29 +16,28 @@ const MassagePage = () => {
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
-    if (gridRef.current) {
-      gsap.fromTo(
-        gridRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power3.out",
-          stagger: 0.08,
-        },
-      );
-    }
-  }, []);
+    fadeInUp(
+      heroRef.current,
+      {
+        y: 20,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
+
+    staggerChildren(
+      gridRef.current,
+      {
+        y: 20,
+        duration: 0.6,
+        stagger: 0.08,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   const handleBook = (massage: MassageType) => {
     setSelectedMassage(massage);

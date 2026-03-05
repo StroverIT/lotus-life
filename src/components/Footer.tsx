@@ -1,12 +1,30 @@
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import { Phone, Mail, MapPin, Instagram, Facebook } from "lucide-react";
 import LotusLogo from "./svg/LotusLogo";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { staggerChildren } from "@/lib/animations";
 
 const Footer = () => {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    staggerChildren(
+      gridRef.current,
+      {
+        y: 12,
+        duration: 0.5,
+        stagger: 0.08,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
+
   return (
     <footer className="bg-foreground text-primary-foreground">
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="md:col-span-1">
             <div className="flex items-center gap-3 mb-3">

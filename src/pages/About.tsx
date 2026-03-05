@@ -1,9 +1,10 @@
  "use client";
 
 import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
 import { Leaf, Users, Heart, Mountain, MapPin } from "lucide-react";
 import Layout from "@/components/Layout";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp, staggerChildren } from "@/lib/animations";
 
 const pillars = [
   { icon: Leaf, title: "Natural Harmony", description: "We work with nature, not against it. Our practices honor the body's natural rhythms and the mountain environment that surrounds us." },
@@ -17,49 +18,48 @@ const AboutPage = () => {
   const philosophyRef = useRef<HTMLDivElement | null>(null);
   const pillarsRef = useRef<HTMLDivElement | null>(null);
   const studiosRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
-    if (philosophyRef.current) {
-      gsap.fromTo(
-        philosophyRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 0.1 },
-      );
-    }
-    if (pillarsRef.current) {
-      gsap.fromTo(
-        pillarsRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power3.out",
-          stagger: 0.1,
-        },
-      );
-    }
-    if (studiosRef.current) {
-      gsap.fromTo(
-        studiosRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power3.out",
-          stagger: 0.1,
-        },
-      );
-    }
-  }, []);
+    fadeInUp(
+      heroRef.current,
+      {
+        y: 20,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
+
+    fadeInUp(
+      philosophyRef.current,
+      {
+        y: 20,
+        duration: 0.6,
+        delay: 0.1,
+      },
+      prefersReducedMotion,
+    );
+
+    staggerChildren(
+      pillarsRef.current,
+      {
+        y: 20,
+        duration: 0.6,
+        stagger: 0.1,
+      },
+      prefersReducedMotion,
+    );
+
+    staggerChildren(
+      studiosRef.current,
+      {
+        y: 20,
+        duration: 0.6,
+        stagger: 0.1,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   return (
     <Layout>

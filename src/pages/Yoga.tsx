@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { gsap } from "gsap";
 import { Clock, MapPin, User, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { weeklySchedule, yogaEvents } from "@/data/schedule";
 import { cn } from "@/lib/utils";
 import EventSignupDialog from "@/components/EventSignupDialog";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp, staggerChildren } from "@/lib/animations";
 
 const YogaPage = () => {
   const [selectedDay, setSelectedDay] = useState(0);
@@ -18,52 +19,42 @@ const YogaPage = () => {
   const heroRef = useRef<HTMLDivElement | null>(null);
   const scheduleRef = useRef<HTMLDivElement | null>(null);
   const eventsRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   // Initial page load animations (run once)
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
+    fadeInUp(
+      heroRef.current,
+      {
+        y: 20,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
 
-    if (eventsRef.current) {
-      gsap.fromTo(
-        eventsRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power3.out",
-          stagger: 0.1,
-        },
-      );
-    }
-  }, []);
+    staggerChildren(
+      eventsRef.current,
+      {
+        y: 20,
+        duration: 0.6,
+        stagger: 0.1,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   // Animate only the schedule list when the selected day changes
   useEffect(() => {
-    if (scheduleRef.current) {
-      // Ensure cards start hidden before animating
-      gsap.set(scheduleRef.current.children, { opacity: 0, y: 16 });
-
-      // Animate the individual class cards with a smooth stagger
-      gsap.fromTo(
-        scheduleRef.current.children,
-        { opacity: 0, y: 16 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power3.out",
-          stagger: 0.08,
-        },
-      );
-    }
-  }, [selectedDay]);
+    staggerChildren(
+      scheduleRef.current,
+      {
+        y: 16,
+        duration: 0.6,
+        stagger: 0.08,
+      },
+      prefersReducedMotion,
+    );
+  }, [selectedDay, prefersReducedMotion]);
 
   const openSignup = (name: string, day?: string, time?: string) => {
     setSignupEvent({ name, day, time });

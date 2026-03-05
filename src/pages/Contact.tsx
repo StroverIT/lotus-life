@@ -1,13 +1,14 @@
- "use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
-import { gsap } from "gsap";
 import { Phone, Mail, MapPin, MessageCircle, Send } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp, staggerChildren } from "@/lib/animations";
 
 const WHATSAPP_URL = "https://wa.me/359883317785";
 
@@ -16,29 +17,28 @@ const ContactPage = () => {
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
-    if (contentRef.current) {
-      gsap.fromTo(
-        contentRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.6,
-          ease: "power3.out",
-          stagger: 0.1,
-        },
-      );
-    }
-  }, []);
+    fadeInUp(
+      heroRef.current,
+      {
+        y: 20,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
+
+    staggerChildren(
+      contentRef.current,
+      {
+        y: 20,
+        duration: 0.6,
+        stagger: 0.1,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

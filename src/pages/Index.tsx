@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { gsap } from "gsap";
 import { ArrowRight, Sparkles, Leaf, Users, Heart, Mountain } from "lucide-react";
+import { useEffect, useRef } from "react";
 import Layout from "@/components/Layout";
 import { useTheme } from "@/context/ThemeContext";
-import { useEffect, useRef } from "react";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp, staggerChildren } from "@/lib/animations";
 
 const Index = () => {
   const { season } = useTheme();
@@ -13,30 +14,29 @@ const Index = () => {
 
   const heroRef = useRef<HTMLDivElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
-    if (cardsRef.current) {
-      gsap.fromTo(
-        cardsRef.current.children,
-        { opacity: 0, y: 40 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: "power3.out",
-          stagger: 0.15,
-          delay: 0.3,
-        },
-      );
-    }
-  }, []);
+    fadeInUp(
+      heroRef.current,
+      {
+        y: 30,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
+
+    staggerChildren(
+      cardsRef.current,
+      {
+        y: 40,
+        duration: 0.8,
+        stagger: 0.15,
+        delay: 0.3,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   return (
     <Layout>

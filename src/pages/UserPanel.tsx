@@ -1,7 +1,6 @@
- "use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { gsap } from "gsap";
 import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpRight, Sparkles } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +11,8 @@ import { sampleVisits, Visit } from "@/data/visits";
 import { memberships } from "@/data/memberships";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp } from "@/lib/animations";
 
 // Simulated current membership (null = no membership)
 const currentMembershipId: string | null = "essence";
@@ -46,20 +47,22 @@ const UserPanel = () => {
   const [guest, setGuest] = useState<{ name?: string; email?: string } | null>(null);
 
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const guestRaw = window.localStorage.getItem("lotus-life-guest");
       setGuest(guestRaw ? JSON.parse(guestRaw) : null);
     }
-    if (headerRef.current) {
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
-  }, []);
+    fadeInUp(
+      headerRef.current,
+      {
+        y: 20,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   const grouped = useMemo(() => {
     const g = groupByMonth(sampleVisits);

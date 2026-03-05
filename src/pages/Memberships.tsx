@@ -1,42 +1,42 @@
- "use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
 import { Check, Star } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { memberships, singleClassPrice } from "@/data/memberships";
 import { cn } from "@/lib/utils";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { fadeInUp, staggerChildren } from "@/lib/animations";
 
 const WHATSAPP_URL = "https://wa.me/359883317785";
 
 const MembershipsPage = () => {
   const heroRef = useRef<HTMLDivElement | null>(null);
   const cardsRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (heroRef.current) {
-      gsap.fromTo(
-        heroRef.current,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-      );
-    }
-    if (cardsRef.current) {
-      gsap.fromTo(
-        cardsRef.current.children,
-        { opacity: 0, y: 20 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.7,
-          ease: "power3.out",
-          stagger: 0.1,
-        },
-      );
-    }
-  }, []);
+    fadeInUp(
+      heroRef.current,
+      {
+        y: 20,
+        duration: 0.8,
+      },
+      prefersReducedMotion,
+    );
+
+    staggerChildren(
+      cardsRef.current,
+      {
+        y: 20,
+        duration: 0.7,
+        stagger: 0.1,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   return (
     <Layout>

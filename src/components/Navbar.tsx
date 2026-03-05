@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Phone, Leaf, Heart, User } from "lucide-react";
@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { staggerChildren } from "@/lib/animations";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -29,6 +31,20 @@ const Navbar = () => {
   const [bookOpen, setBookOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    staggerChildren(
+      shellRef.current,
+      {
+        y: 10,
+        duration: 0.4,
+        stagger: 0.05,
+      },
+      prefersReducedMotion,
+    );
+  }, [prefersReducedMotion]);
 
   const handleBookChoice = (path: string) => {
     setBookOpen(false);
@@ -40,7 +56,7 @@ const Navbar = () => {
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 glass-purple">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div ref={shellRef} className="flex items-center justify-between h-16 md:h-20 gap-6">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               <LotusLogo className="w-24 h-36" />
