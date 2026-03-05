@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { Phone, Mail, MapPin, Instagram, Facebook } from "lucide-react";
 import lotusLogo from "@/assets/lotus-life-logo.svg";
 

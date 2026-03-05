@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+ "use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { gsap } from "gsap";
 import { Clock, MapPin, User, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -12,6 +14,40 @@ const YogaPage = () => {
   const [selectedDay, setSelectedDay] = useState(0);
   const [signupOpen, setSignupOpen] = useState(false);
   const [signupEvent, setSignupEvent] = useState<{ name: string; day?: string; time?: string }>({ name: "" });
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const scheduleRef = useRef<HTMLDivElement | null>(null);
+  const eventsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (heroRef.current) {
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+      );
+    }
+    if (scheduleRef.current) {
+      gsap.fromTo(
+        scheduleRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" },
+      );
+    }
+    if (eventsRef.current) {
+      gsap.fromTo(
+        eventsRef.current.children,
+        { opacity: 0, y: 20 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power3.out",
+          stagger: 0.1,
+        },
+      );
+    }
+  }, [selectedDay]);
 
   const openSignup = (name: string, day?: string, time?: string) => {
     setSignupEvent({ name, day, time });
@@ -28,8 +64,7 @@ const YogaPage = () => {
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/20 blur-3xl" />
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
             <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
               Yoga Practices
             </h1>
@@ -62,11 +97,9 @@ const YogaPage = () => {
             ))}
           </div>
 
-          <motion.div
+          <div
             key={selectedDay}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            ref={scheduleRef}
             className="grid gap-4 max-w-3xl mx-auto"
           >
             {weeklySchedule[selectedDay].classes.map((cls) => (
@@ -97,7 +130,7 @@ const YogaPage = () => {
 
           <p className="text-center text-sm text-muted-foreground mt-8 font-body">
             Single class: <span className="text-primary font-semibold">€10</span> · 
-            <Link to="/memberships" className="text-primary hover:underline ml-1">View memberships →</Link>
+            <Link href="/memberships" className="text-primary hover:underline ml-1">View memberships →</Link>
           </p>
         </div>
       </section>
@@ -108,13 +141,10 @@ const YogaPage = () => {
           <h2 className="font-display text-4xl text-center mb-4">Upcoming Events</h2>
           <p className="text-center text-muted-foreground font-body mb-12">Special workshops and experiences</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div ref={eventsRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {yogaEvents.map((event) => (
-              <motion.div
+              <div
                 key={event.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
                 className="rounded-xl border border-border bg-card p-8 hover:shadow-lg transition-shadow"
               >
                 <div className="flex items-center gap-2 text-xs text-primary font-medium font-body mb-3">
@@ -134,7 +164,7 @@ const YogaPage = () => {
                 >
                   Reserve Spot <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>

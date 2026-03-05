@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 270 100% 99%;
+    --foreground: 263 40% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 263 40% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 263 40% 15%;
+
+    --primary: 263 84% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 263 85% 95%;
+    --secondary-foreground: 263 40% 15%;
+
+    --muted: 263 30% 94%;
+    --muted-foreground: 263 15% 45%;
+
+    --accent: 263 70% 76%;
+    --accent-foreground: 263 40% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 263 30% 90%;
+    --input: 263 30% 90%;
+    --ring: 263 84% 57%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 263 85% 97%;
+    --sidebar-foreground: 263 40% 15%;
+    --sidebar-primary: 263 84% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 263 70% 76%;
+    --sidebar-accent-foreground: 263 40% 15%;
+    --sidebar-border: 263 30% 90%;
+    --sidebar-ring: 263 84% 57%;
+
+    --lotus-deep: 263 83% 50%;
+    --lotus-glow: 263 70% 76%;
+    --lotus-light: 263 85% 95%;
+    --lotus-cream: 270 100% 99%;
+  }
+
+  .dark {
+    --background: 263 40% 6%;
+    --foreground: 263 20% 92%;
+
+    --card: 263 35% 10%;
+    --card-foreground: 263 20% 92%;
+
+    --popover: 263 35% 10%;
+    --popover-foreground: 263 20% 92%;
+
+    --primary: 263 84% 57%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 263 30% 18%;
+    --secondary-foreground: 263 20% 92%;
+
+    --muted: 263 25% 18%;
+    --muted-foreground: 263 15% 60%;
+
+    --accent: 263 50% 30%;
+    --accent-foreground: 263 20% 92%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 263 25% 18%;
+    --input: 263 25% 18%;
+    --ring: 263 70% 76%;
+
+    --sidebar-background: 263 40% 8%;
+    --sidebar-foreground: 263 20% 92%;
+    --sidebar-primary: 263 84% 57%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 263 50% 30%;
+    --sidebar-accent-foreground: 263 20% 92%;
+    --sidebar-border: 263 25% 18%;
+    --sidebar-ring: 263 84% 57%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Cormorant Garamond', serif;
+  }
+}
+
+@layer utilities {
+  .glass-purple {
+    background: rgba(124, 58, 237, 0.08);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(124, 58, 237, 0.15);
+  }
+
+  .gradient-purple {
+    background: linear-gradient(135deg, hsl(263 84% 57%), hsl(263 70% 76%));
+  }
+
+  .gradient-purple-dark {
+    background: linear-gradient(135deg, hsl(263 83% 35%), hsl(263 84% 57%));
+  }
+
+  .text-gradient-purple {
+    background: linear-gradient(135deg, hsl(263 84% 57%), hsl(263 70% 76%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.theme-summer {
+  --primary: 270 72% 55%;
+  --accent: 280 60% 75%;
+  --secondary: 270 40% 95%;
+  --muted: 270 25% 92%;
+  --ring: 270 72% 55%;
+  --lotus-deep: 270 72% 48%;
+  --lotus-glow: 280 60% 75%;
+  --lotus-light: 270 40% 95%;
+}
+
+.theme-winter {
+  --primary: 263 70% 50%;
+  --accent: 263 60% 80%;
+  --secondary: 263 40% 95%;
+  --muted: 263 20% 92%;
+  --ring: 263 70% 50%;
+  --lotus-deep: 263 70% 42%;
+  --lotus-glow: 263 60% 80%;
+  --lotus-light: 263 40% 95%;
+}
+

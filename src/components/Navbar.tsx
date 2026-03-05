@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X, Phone, Leaf, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 import lotusLogo from "@/assets/lotus-life-logo.svg";
 import {
   Dialog,
@@ -22,16 +22,18 @@ const navLinks = [
   { label: "Contact", to: "/contact" },
 ];
 
+"use client";
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const handleBookChoice = (path: string) => {
     setBookOpen(false);
     setIsOpen(false);
-    navigate(path);
+    router.push(path);
   };
 
   return (
@@ -90,14 +92,8 @@ const Navbar = () => {
         </div>
 
         {/* Mobile menu */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden glass-purple border-t border-border overflow-hidden"
-            >
+        {isOpen && (
+          <div className="md:hidden glass-purple border-t border-border overflow-hidden">
               <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
                 {navLinks.map((link) => (
                   <Link
@@ -106,7 +102,7 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                      location.pathname === link.to
+                      pathname === link.to
                         ? "bg-primary/10 text-primary"
                         : "text-foreground/70 hover:text-primary"
                     )}
@@ -124,9 +120,9 @@ const Navbar = () => {
                   </Button>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Book Now modal */}

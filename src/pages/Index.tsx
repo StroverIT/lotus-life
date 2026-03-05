@@ -1,15 +1,45 @@
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+"use client";
+
+import Link from "next/link";
+import { gsap } from "gsap";
 import { ArrowRight, Sparkles, Leaf, Users, Heart, Mountain } from "lucide-react";
 import Layout from "@/components/Layout";
 import lotusLogo from "@/assets/lotus-life-logo.svg";
 import heroSummer from "@/assets/hero-summer.jpg";
 import heroWinter from "@/assets/hero-winter.jpg";
 import { useTheme } from "@/context/ThemeContext";
+import { useEffect, useRef } from "react";
 
 const Index = () => {
   const { season } = useTheme();
   const heroImage = season === "winter" ? heroWinter : heroSummer;
+
+  const heroRef = useRef<HTMLDivElement | null>(null);
+  const cardsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (heroRef.current) {
+      gsap.fromTo(
+        heroRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+      );
+    }
+    if (cardsRef.current) {
+      gsap.fromTo(
+        cardsRef.current.children,
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          stagger: 0.15,
+          delay: 0.3,
+        },
+      );
+    }
+  }, []);
 
   return (
     <Layout>
@@ -24,8 +54,7 @@ const Index = () => {
         <div className="absolute top-20 left-10 w-72 h-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute bottom-20 right-10 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
 
-        <div className="relative z-10 container mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+        <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
             <div className="flex items-center justify-center gap-2 mb-6">
               <Sparkles className="w-5 h-5 text-accent" />
               <span className="text-accent text-sm tracking-[0.3em] uppercase font-body">Bansko, Bulgaria</span>
@@ -42,10 +71,8 @@ const Index = () => {
           </motion.div>
 
           {/* Two category cards with background images */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+          <div
+            ref={cardsRef}
             className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto"
           >
             {/* Yoga Card */}
