@@ -65,13 +65,12 @@ const YogaPage = () => {
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/20 blur-3xl" />
         <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
-            <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
-              Yoga Practices
-            </h1>
-            <p className="text-accent text-lg font-body max-w-xl mx-auto">
-              Eight unique movement and meditation styles, seven days a week. Find the practice that speaks to your body.
-            </p>
-          </motion.div>
+          <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
+            Yoga Practices
+          </h1>
+          <p className="text-accent text-lg font-body max-w-xl mx-auto">
+            Eight unique movement and meditation styles, seven days a week. Find the practice that speaks to your body.
+          </p>
         </div>
       </section>
 
@@ -126,7 +125,7 @@ const YogaPage = () => {
                 </div>
               </div>
             ))}
-          </motion.div>
+          </div>
 
           <p className="text-center text-sm text-muted-foreground mt-8 font-body">
             Single class: <span className="text-primary font-semibold">€10</span> · 

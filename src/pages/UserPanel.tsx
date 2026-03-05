@@ -78,16 +78,15 @@ const UserPanel = () => {
         <div className="absolute inset-0 bg-secondary" />
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/20 blur-3xl" />
         <div ref={headerRef} className="relative z-10 container mx-auto px-4 text-center">
-            <div className="w-20 h-20 rounded-full gradient-purple flex items-center justify-center mx-auto mb-6">
-              <UserIcon className="w-9 h-9 text-primary-foreground" />
-            </div>
-            <h1 className="font-display text-4xl md:text-5xl font-light text-foreground mb-2">
-              {guest ? guest.name : "My Account"}
-            </h1>
-            {guest && (
-              <p className="text-muted-foreground font-body text-sm">{guest.email}</p>
-            )}
-          </motion.div>
+          <div className="w-20 h-20 rounded-full gradient-purple flex items-center justify-center mx-auto mb-6">
+            <UserIcon className="w-9 h-9 text-primary-foreground" />
+          </div>
+          <h1 className="font-display text-4xl md:text-5xl font-light text-foreground mb-2">
+            {guest ? guest.name : "My Account"}
+          </h1>
+          {guest && (
+            <p className="text-muted-foreground font-body text-sm">{guest.email}</p>
+          )}
         </div>
       </section>
 
@@ -163,7 +162,7 @@ const UserPanel = () => {
                               </div>
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
                       ))}
                     </div>
                   </div>

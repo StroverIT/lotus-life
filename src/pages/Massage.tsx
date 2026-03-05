@@ -55,13 +55,12 @@ const MassagePage = () => {
         <div className="absolute inset-0 bg-black/60" />
         <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-accent/20 blur-3xl" />
         <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
-            <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
-              Massage Therapy
-            </h1>
-            <p className="text-accent text-lg font-body max-w-xl mx-auto">
-              Healing touch guided by ancient wisdom. Six therapeutic treatments designed to restore your body and spirit.
-            </p>
-          </motion.div>
+          <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
+            Massage Therapy
+          </h1>
+          <p className="text-accent text-lg font-body max-w-xl mx-auto">
+            Healing touch guided by ancient wisdom. Six therapeutic treatments designed to restore your body and spirit.
+          </p>
         </div>
       </section>
 

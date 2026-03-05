@@ -59,13 +59,12 @@ const ContactPage = () => {
         />
         <div className="absolute inset-0 bg-black/60" />
         <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
-            <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
-              Get in Touch
-            </h1>
-            <p className="text-accent text-lg font-body max-w-xl mx-auto">
-              Questions, bookings, or just a friendly hello — we'd love to hear from you.
-            </p>
-          </motion.div>
+          <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
+            Get in Touch
+          </h1>
+          <p className="text-accent text-lg font-body max-w-xl mx-auto">
+            Questions, bookings, or just a friendly hello — we'd love to hear from you.
+          </p>
         </div>
       </section>
 

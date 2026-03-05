@@ -71,13 +71,12 @@ const AboutPage = () => {
         />
         <div className="absolute inset-0 bg-black/60" />
         <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
-            <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
-              About Lotus Life
-            </h1>
-            <p className="text-accent text-lg font-body max-w-xl mx-auto">
-              Our story, philosophy, and the spaces where transformation happens.
-            </p>
-          </motion.div>
+          <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
+            About Lotus Life
+          </h1>
+          <p className="text-accent text-lg font-body max-w-xl mx-auto">
+            Our story, philosophy, and the spaces where transformation happens.
+          </p>
         </div>
       </section>
 
@@ -92,7 +91,7 @@ const AboutPage = () => {
             <p className="text-muted-foreground font-body leading-relaxed text-lg">
               In the shadow of the Pirin Mountains, we've built a sanctuary where ancient healing arts meet modern understanding. Whether you come to stretch, to heal, to move, or simply to breathe — you'll find what you need here.
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 

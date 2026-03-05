@@ -48,13 +48,12 @@ const MembershipsPage = () => {
         />
         <div className="absolute inset-0 bg-black/60" />
         <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
-            <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
-              Memberships
-            </h1>
-            <p className="text-accent text-lg font-body max-w-xl mx-auto">
-              Choose the plan that fits your lifestyle. All memberships include access to both Pirin Hall and Rodopi Hall.
-            </p>
-          </motion.div>
+          <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
+            Memberships
+          </h1>
+          <p className="text-accent text-lg font-body max-w-xl mx-auto">
+            Choose the plan that fits your lifestyle. All memberships include access to both Pirin Hall and Rodopi Hall.
+          </p>
         </div>
       </section>
 
