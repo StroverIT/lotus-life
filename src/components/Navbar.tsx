@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { staggerChildren } from "@/lib/animations";
+import { useBookNowPulse } from "@/hooks/useBookNowPulse";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -33,6 +34,8 @@ const Navbar = () => {
   const router = useRouter();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
+
+  useBookNowPulse();
 
   useEffect(() => {
     staggerChildren(
@@ -54,7 +57,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-purple">
+      <nav className="ll-nav opacity-0 -translate-y-2 fixed top-0 left-0 right-0 z-50 glass-purple">
         <div className="container mx-auto px-4">
           <div ref={shellRef} className="flex items-center justify-between h-16 md:h-20 gap-6">
             {/* Logo */}
@@ -99,7 +102,7 @@ const Navbar = () => {
                 <User className="w-5 h-5" />
               </Link>
               <Button
-                className="gradient-purple text-primary-foreground border-0 hover:opacity-90"
+                className="ll-bookNow gradient-purple text-primary-foreground border-0 hover:opacity-90"
                 onClick={() => setBookOpen(true)}
               >
                 Book Now
@@ -144,7 +147,7 @@ const Navbar = () => {
                   +359 883 317 785
                 </a>
                 <Button
-                  className="w-full mt-2 gradient-purple text-primary-foreground border-0"
+                  className="ll-bookNow w-full mt-2 gradient-purple text-primary-foreground border-0"
                   onClick={() => setBookOpen(true)}
                 >
                   Book Now

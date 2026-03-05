@@ -12,12 +12,20 @@ const ThemeContext = createContext<ThemeContextType>({ season: "summer", setSeas
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-  const [season, setSeason] = useState<Season>(() => {
-    return (localStorage.getItem("lotus-season") as Season) || "summer";
-  });
+  const [season, setSeason] = useState<Season>("summer");
+
+  // Initialize season from localStorage on the client
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedSeason = window.localStorage.getItem("lotus-season") as Season | null;
+    if (storedSeason) {
+      setSeason(storedSeason);
+    }
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem("lotus-season", season);
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("lotus-season", season);
     const root = document.documentElement;
     root.classList.remove("theme-summer", "theme-winter");
     root.classList.add(`theme-${season}`);
