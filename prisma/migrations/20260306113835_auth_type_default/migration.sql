@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "authType" SET DEFAULT 'CREDENTIALS';

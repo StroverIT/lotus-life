@@ -13,8 +13,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 
 function getRedirectParam(params: URLSearchParams | null) {
-  const redirect = params?.get("redirect") ?? "/my-account";
-  if (!redirect.startsWith("/")) return "/my-account";
+  // Prefer NextAuth's callbackUrl, fall back to custom redirect, then home
+  const fromCallback = params?.get("callbackUrl");
+  const fromRedirect = params?.get("redirect");
+  const redirect = fromCallback || fromRedirect || "/";
+  if (!redirect.startsWith("/")) return "/";
   return redirect;
 }
 

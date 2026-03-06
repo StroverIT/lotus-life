@@ -1,14 +1,18 @@
 import UserPanel from "@/pages/UserPanel";
 import { redirect } from "next/navigation";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function MyAccountPage() {
-  const supabase = getSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) redirect("/login?redirect=/my-account");
+  // const session = await getServerSession(authOptions);
+  // console.log(session);
+
+  // if (!session?.user) {
+  //   redirect("/login");
+  // }
 
   return <UserPanel />;
 }

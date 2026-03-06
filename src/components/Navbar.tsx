@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { Menu, X, Leaf, Heart, User, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,6 @@ import {
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { staggerChildren } from "@/lib/animations";
 import { useBookNowPulse } from "@/hooks/useBookNowPulse";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -31,11 +31,7 @@ const navLinks = [
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
-  const [me, setMe] = useState<
-    | { kind: "none" }
-    | { kind: "guest"; supabaseId: string }
-    | { kind: "user"; supabaseId: string; role: "USER" | "ADMIN"; name?: string | null }
-  >({ kind: "none" });
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -55,47 +51,21 @@ const Navbar = () => {
     );
   }, [prefersReducedMotion]);
 
-  useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-
-    const refresh = async () => {
-      try {
-        const res = await fetch("/api/me");
-        const json = await res.json();
-        if (!json?.user) return setMe({ kind: "none" });
-        if (json.user.kind === "guest") return setMe({ kind: "guest", supabaseId: json.user.supabaseId });
-        if (json.user.kind === "user") {
-          return setMe({
-            kind: "user",
-            supabaseId: json.user.supabaseId,
-            role: json.user.role,
-            name: json.user.name ?? null,
-          });
-        }
-        setMe({ kind: "none" });
-      } catch {
-        setMe({ kind: "none" });
-      }
-    };
-
-    refresh();
-    const { data } = supabase.auth.onAuthStateChange(() => refresh());
-    return () => {
-      data.subscription.unsubscribe();
-    };
-  }, []);
-
   const handleBookChoice = (path: string) => {
     setBookOpen(false);
     setIsOpen(false);
     router.push(path);
   };
 
+  const user = session?.user as (typeof session)["user"] & { role?: "USER" | "ADMIN"; guest?: boolean } | undefined;
+  const isLoading = status === "loading";
+  const isLoggedIn = !!user;
+  console.log("test+++", session);
+
+  const isAdmin = isLoggedIn && user?.role === "ADMIN";
+
   const handleLogout = async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    setMe({ kind: "none" });
-    router.push("/");
+    await signOut({ callbackUrl: "/" });
   };
 
   return (
@@ -131,7 +101,7 @@ const Navbar = () => {
 
             {/* CTA */}
             <div className="hidden md:flex items-center gap-3">
-              {me.kind === "user" && me.role === "ADMIN" && (
+              {isAdmin && (
                 <Link
                   href="/admin"
                   className="px-3 py-2 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-2"
@@ -141,7 +111,7 @@ const Navbar = () => {
                 </Link>
               )}
 
-              {me.kind === "none" ? (
+              {!isLoggedIn ? (
                 <Link href="/login">
                   <Button variant="outline">Login</Button>
                 </Link>
@@ -198,7 +168,7 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="mt-2 pt-2 border-t border-border">
-                {me.kind === "user" && me.role === "ADMIN" && (
+                {isAdmin && (
                   <Link
                     href="/admin"
                     onClick={() => setIsOpen(false)}
@@ -209,7 +179,7 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                {me.kind === "none" ? (
+                {!isLoggedIn ? (
                   <Link
                     href="/login"
                     onClick={() => setIsOpen(false)}

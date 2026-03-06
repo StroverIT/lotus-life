@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession, signIn } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 interface EventSignupDialogProps {
   open: boolean;
@@ -14,50 +14,28 @@ interface EventSignupDialogProps {
 }
 
 const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime }: EventSignupDialogProps) => {
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const { data: session } = useSession();
   const [busy, setBusy] = useState(false);
-  const [authed, setAuthed] = useState(false);
 
   const detail = [eventDay, eventTime].filter(Boolean).join(" at ");
 
   useEffect(() => {
-    if (!open) return;
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/me");
-        const json = await res.json();
-        if (!alive) return;
-        setAuthed(!!json?.user);
-      } catch {
-        if (!alive) return;
-        setAuthed(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !authed) return;
+    if (!open || !session?.user) return;
     toast({
       title: "You're signed up!",
       description: `You've been registered for ${eventName}${detail ? ` on ${detail}` : ""}.`,
     });
     onOpenChange(false);
-  }, [open, authed, eventName, detail, onOpenChange]);
+  }, [open, session, eventName, detail, onOpenChange]);
 
   const handleOAuth = async (provider: "google" | "facebook") => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent("/yoga")}`,
-        },
+      const res = await signIn(provider, {
+        callbackUrl: "/yoga",
+        redirect: true,
       });
-      if (error) throw error;
+      if ((res as any)?.error) throw new Error((res as any).error);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Please try again.";
       toast({ title: "Sign-in failed", description: message });
@@ -68,9 +46,11 @@ const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime 
   const handleGuest = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      setAuthed(true);
+      const res = await signIn("guest", {
+        callbackUrl: "/yoga",
+        redirect: true,
+      });
+      if ((res as any)?.error) throw new Error((res as any).error);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Please try again.";
       toast({ title: "Guest sign-in failed", description: message });
@@ -79,7 +59,7 @@ const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime 
     }
   };
 
-  if (authed) return null;
+  if (session?.user) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

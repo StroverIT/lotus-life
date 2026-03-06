@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useSession, signIn } from "next-auth/react";
 import { Clock, Calendar, ArrowLeft, ArrowRight, MessageCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Massage } from "@/types/catalog";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { toast } from "@/components/ui/sonner";
 
 const WHATSAPP_URL = "https://wa.me/359883317785";
@@ -21,8 +21,7 @@ interface Props {
 }
 
 const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-
+  const { data: session, status } = useSession();
   const [step, setStep] = useState(1);
   const [authChecked, setAuthChecked] = useState(false);
   const [authed, setAuthed] = useState(false);
@@ -48,33 +47,21 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
 
   useEffect(() => {
     if (!open) return;
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/me");
-        const json = await res.json();
-        if (!alive) return;
-        const isAuthed = !!json?.user;
-        setAuthed(isAuthed);
-        setAuthChecked(true);
-        if (!isAuthed) setStep(0);
-      } catch {
-        if (!alive) return;
-        setAuthed(false);
-        setAuthChecked(true);
-        setStep(0);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [open]);
+    if (status === "loading") {
+      setAuthChecked(false);
+      return;
+    }
+    const hasUser = !!session?.user;
+    setAuthed(hasUser);
+    setAuthChecked(true);
+    setStep(hasUser ? 1 : 0);
+  }, [open, status, session]);
 
   const continueAsGuest = async () => {
     setAuthBusy(true);
     try {
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
+      const res = await signIn("guest", { redirect: false });
+      if ((res as any)?.error) throw new Error((res as any).error);
       setAuthed(true);
       setStep(1);
       toast.success("Signed in as guest");
