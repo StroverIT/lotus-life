@@ -7,7 +7,7 @@
     "price60": "€45",
     "description": "A soothing full-body massage using long, flowing strokes to melt away tension and restore balance. Perfect for those seeking deep relaxation.",
     "benefits": ["Stress relief", "Improved circulation", "Muscle tension release", "Better sleep"],
-    "availableDays": ["Monday", "Thursday", "Friday"]
+    "availableDays": ["Monday", "Wednesday", "Friday"]
   },
   {
     "id": "deep-tissue",
@@ -17,7 +17,7 @@
     "price60": "€55",
     "description": "Targeted deep pressure work focusing on chronic muscle tension and knots. Ideal for athletes and those with persistent pain.",
     "benefits": ["Chronic pain relief", "Improved mobility", "Injury recovery", "Postural correction"],
-    "availableDays": ["Monday", "Thursday", "Friday"]
+    "availableDays": ["Monday", "Wednesday", "Friday"]
   },
   {
     "id": "aromatherapy",
@@ -27,7 +27,7 @@
     "price60": "€55",
     "description": "A holistic massage combining gentle techniques with therapeutic essential oils chosen for your specific needs.",
     "benefits": ["Emotional balance", "Enhanced relaxation", "Skin nourishment", "Mood elevation"],
-    "availableDays": ["Monday", "Thursday", "Friday"]
+    "availableDays": ["Monday", "Wednesday", "Friday"]
   },
   {
     "id": "hot-stone",
@@ -37,7 +37,7 @@
     "price60": "€65",
     "description": "Warm volcanic stones placed along energy meridians, combined with massage to create profound relaxation and energy flow.",
     "benefits": ["Deep muscle relaxation", "Energy balancing", "Improved circulation", "Pain management"],
-    "availableDays": ["Monday", "Thursday", "Friday"]
+    "availableDays": ["Monday", "Wednesday", "Friday"]
   },
   {
     "id": "thai",
@@ -47,7 +47,7 @@
     "price60": "€60",
     "description": "An ancient healing art combining assisted yoga stretches, acupressure, and energy line work. Performed on a floor mat, fully clothed.",
     "benefits": ["Increased flexibility", "Energy flow", "Joint mobility", "Full body stretch"],
-    "availableDays": ["Monday", "Thursday", "Friday"]
+    "availableDays": ["Monday", "Wednesday", "Friday"]
   },
   {
     "id": "face-body",
@@ -57,7 +57,7 @@
     "price60": "€85",
     "description": "Our signature treatment combining a full-body massage with a rejuvenating facial massage using natural mountain botanicals.",
     "benefits": ["Complete renewal", "Facial glow", "Deep relaxation", "Anti-aging benefits"],
-    "availableDays": ["Monday", "Thursday", "Friday"]
+    "availableDays": ["Monday", "Wednesday", "Friday"]
   }
 ]
 

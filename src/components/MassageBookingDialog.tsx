@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
-import { useSession, signIn } from "next-auth/react";
-import { Clock, Calendar, ArrowLeft, ArrowRight, MessageCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { Clock, ArrowLeft, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { AuthOptions } from "@/components/ui/auth-options";
 import { cn } from "@/lib/utils";
 import type { Massage } from "@/types/catalog";
 import { toast } from "@/components/ui/sonner";
-
-const WHATSAPP_URL = "https://wa.me/359883317785";
+import { addDays, addMonths, format, getDay, startOfDay } from "date-fns";
 
 const MASSAGE_TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00",
@@ -24,20 +25,43 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
   const { data: session, status } = useSession();
   const [step, setStep] = useState(1);
   const [authChecked, setAuthChecked] = useState(false);
-  const [authed, setAuthed] = useState(false);
-  const [authBusy, setAuthBusy] = useState(false);
   const [duration, setDuration] = useState<"30" | "60" | null>(null);
-  const [day, setDay] = useState<string | null>(null);
+  const [day, setDay] = useState<Date | null>(null);
   const [time, setTime] = useState<string | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [takenSlots, setTakenSlots] = useState<Set<string>>(new Set());
+
+  const todayStart = useMemo(() => startOfDay(new Date()), []);
+  const tomorrowStart = useMemo(() => addDays(todayStart, 1), [todayStart]);
+
+  const weekdayNamesToNumber: Record<string, number> = useMemo(
+    () => ({
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+    }),
+    []
+  );
+
+  const allowedWeekdayNumbers = useMemo(
+    () =>
+      new Set(
+        (massage?.availableDays ?? []).map((d) => weekdayNamesToNumber[d] ?? -1).filter((n) => n >= 0)
+      ),
+    [massage?.availableDays, weekdayNamesToNumber]
+  );
 
   const reset = () => {
     setStep(1);
     setAuthChecked(false);
-    setAuthed(false);
-    setAuthBusy(false);
     setDuration(null);
     setDay(null);
     setTime(null);
+    setConfirmBusy(false);
   };
 
   const handleOpenChange = (o: boolean) => {
@@ -51,34 +75,69 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
       setAuthChecked(false);
       return;
     }
-    const hasUser = !!session?.user;
-    setAuthed(hasUser);
     setAuthChecked(true);
-    setStep(hasUser ? 1 : 0);
-  }, [open, status, session]);
+    setStep(1);
+  }, [open, status]);
 
-  const continueAsGuest = async () => {
-    setAuthBusy(true);
-    try {
-      const res = await signIn("guest", { redirect: false });
-      if ((res as any)?.error) throw new Error((res as any).error);
-      setAuthed(true);
-      setStep(1);
-      toast.success("Signed in as guest");
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Guest sign-in failed";
-      toast.error(message);
-    } finally {
-      setAuthBusy(false);
-    }
-  };
+  useEffect(() => {
+    if (!open) return;
+    const from = format(tomorrowStart, "yyyy-MM-dd");
+    const to = format(addMonths(tomorrowStart, 3), "yyyy-MM-dd");
+    fetch(`/api/massage-bookings?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+      .then((res) => res.json())
+      .then((data: { taken?: Array<{ date: string; time: string }> }) => {
+        const set = new Set<string>();
+        for (const { date: d, time: t } of data.taken ?? []) {
+          set.add(`${d}_${t}`);
+        }
+        setTakenSlots(set);
+      })
+      .catch(() => setTakenSlots(new Set()));
+  }, [open, tomorrowStart]);
 
   if (!massage) return null;
 
   const price = duration === "30" ? massage.price30 : massage.price60;
 
-  const whatsappText = `Hi! I'd like to book a ${massage.name} (${duration} min, ${price}) on ${day} at ${time}`;
-  const whatsappLink = `${WHATSAPP_URL}?text=${encodeURIComponent(whatsappText)}`;
+  const isDayDisabled = (date: Date) => {
+    const dateStart = startOfDay(date);
+    if (dateStart < tomorrowStart) return true;
+    if (allowedWeekdayNumbers.size > 0 && !allowedWeekdayNumbers.has(getDay(date))) return true;
+    const dateStr = format(date, "yyyy-MM-dd");
+    const takenCount = MASSAGE_TIME_SLOTS.filter((t) => takenSlots.has(`${dateStr}_${t}`)).length;
+    if (takenCount === MASSAGE_TIME_SLOTS.length) return true;
+    return false;
+  };
+
+  const dayLabel = day ? format(day, "EEEE, MMM d") : "";
+
+  const handleConfirm = async () => {
+    if (!day || !time || !duration) return;
+    setConfirmBusy(true);
+    try {
+      const res = await fetch("/api/massage-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          massageId: massage.id,
+          date: format(day, "yyyy-MM-dd"),
+          time,
+          duration: duration === "30" ? 30 : 60,
+        }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Booking failed");
+      }
+      toast.success("Booking confirmed");
+      onOpenChange(false);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Booking failed";
+      toast.error(message);
+    } finally {
+      setConfirmBusy(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -90,30 +149,6 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
         {!authChecked ? (
           <div className="py-6 text-center text-sm text-muted-foreground font-body">
             Checking sign-in…
-          </div>
-        ) : !authed ? (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground font-body">
-              To book, please sign in. Guests can book massage sessions.
-            </p>
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                className="gradient-purple text-primary-foreground border-0 hover:opacity-90"
-                type="button"
-                onClick={continueAsGuest}
-                disabled={authBusy}
-              >
-                Continue as guest
-              </Button>
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => (window.location.href = `/login?redirect=${encodeURIComponent("/massage")}`)}
-                disabled={authBusy}
-              >
-                Login / Register
-              </Button>
-            </div>
           </div>
         ) : (
           <>
@@ -130,115 +165,144 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
               ))}
             </div>
 
-        {/* Step 1: Duration */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground font-body">Choose your session duration</p>
-            <div className="grid grid-cols-2 gap-3">
-              {(["30", "60"] as const).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => { setDuration(d); setStep(2); }}
-                  className={cn(
-                    "rounded-xl border-2 p-6 text-center transition-all hover:border-primary/50",
-                    duration === d ? "border-primary bg-primary/5" : "border-border"
-                  )}
-                >
-                  <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
-                  <p className="font-display text-xl font-semibold">{d} min</p>
-                  <p className="text-primary font-display text-lg mt-1">
-                    {d === "30" ? massage.price30 : massage.price60}
-                  </p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+            {/* Step 1: Duration */}
+            {step === 1 && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground font-body">Choose your session duration</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {(["30", "60"] as const).map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => { setDuration(d); setStep(2); }}
+                      className={cn(
+                        "rounded-xl border-2 p-6 text-center transition-all hover:border-primary/50",
+                        duration === d ? "border-primary bg-primary/5" : "border-border"
+                      )}
+                    >
+                      <Clock className="w-5 h-5 mx-auto mb-2 text-primary" />
+                      <p className="font-display text-xl font-semibold">{d} min</p>
+                      <p className="text-primary font-display text-lg mt-1">
+                        {d === "30" ? massage.price30 : massage.price60}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-        {/* Step 2: Day */}
-        {step === 2 && (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground font-body">Choose a day</p>
-            <div className="grid grid-cols-3 gap-3">
-              {massage.availableDays.map((d) => (
-                <button
-                  key={d}
-                  onClick={() => { setDay(d); setStep(3); }}
-                  className={cn(
-                    "rounded-xl border-2 p-4 text-center transition-all hover:border-primary/50",
-                    day === d ? "border-primary bg-primary/5" : "border-border"
-                  )}
-                >
-                  <Calendar className="w-5 h-5 mx-auto mb-2 text-primary" />
-                  <p className="font-body text-sm font-medium">{d}</p>
-                </button>
-              ))}
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="mt-2">
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back
-            </Button>
-          </div>
-        )}
+            {/* Step 2: Day — calendar, today and past disabled */}
+            {step === 2 && (
+              <div className="space-y-4 flex flex-col items-center">
+                <p className="text-sm text-muted-foreground font-body w-full text-center">Choose a day</p>
+                <div className="flex justify-center">
+                  <Calendar
+                    mode="single"
+                    selected={day ?? undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        setDay(date);
+                        setStep(3);
+                      }
+                    }}
+                    disabled={isDayDisabled}
+                    defaultMonth={tomorrowStart}
+                  />
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="mt-2 self-start">
+                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                </Button>
+              </div>
+            )}
 
-        {/* Step 3: Time */}
-        {step === 3 && (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground font-body">Choose a time slot</p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-              {MASSAGE_TIME_SLOTS.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => { setTime(t); setStep(4); }}
-                  className={cn(
-                    "rounded-lg border-2 py-3 px-2 text-center text-sm font-body font-medium transition-all hover:border-primary/50",
-                    time === t ? "border-primary bg-primary/5" : "border-border"
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="mt-2">
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back
-            </Button>
-          </div>
-        )}
+            {/* Step 3: Time */}
+            {step === 3 && day && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground font-body">Choose a time slot</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {MASSAGE_TIME_SLOTS.map((t) => {
+                    const slotKey = `${format(day, "yyyy-MM-dd")}_${t}`;
+                    const isTaken = takenSlots.has(slotKey);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        disabled={isTaken}
+                        onClick={() => {
+                          if (!isTaken) {
+                            setTime(t);
+                            setStep(4);
+                          }
+                        }}
+                        className={cn(
+                          "rounded-lg border-2 py-3 px-2 text-center text-sm font-body font-medium transition-all hover:border-primary/50",
+                          time === t ? "border-primary bg-primary/5" : "border-border",
+                          isTaken && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="mt-2">
+                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                </Button>
+              </div>
+            )}
 
-        {/* Step 4: Confirmation */}
+            {/* Step 4: Confirmation (if account) or sign in (Google, Facebook, guest) */}
             {step === 4 && (
               <div className="space-y-4">
-            <div className="rounded-xl bg-secondary p-5 space-y-2">
-              <div className="flex justify-between text-sm font-body">
-                <span className="text-muted-foreground">Treatment</span>
-                <span className="font-medium">{massage.name}</span>
-              </div>
-              <div className="flex justify-between text-sm font-body">
-                <span className="text-muted-foreground">Duration</span>
-                <span className="font-medium">{duration} minutes</span>
-              </div>
-              <div className="flex justify-between text-sm font-body">
-                <span className="text-muted-foreground">Day</span>
-                <span className="font-medium">{day}</span>
-              </div>
-              <div className="flex justify-between text-sm font-body">
-                <span className="text-muted-foreground">Time</span>
-                <span className="font-medium">{time}</span>
-              </div>
-              <div className="border-t border-border pt-2 flex justify-between text-sm font-body">
-                <span className="text-muted-foreground">Price</span>
-                <span className="font-display text-xl font-semibold text-primary">{price}</span>
-              </div>
-            </div>
+                <div className="rounded-xl bg-secondary p-5 space-y-2">
+                  <div className="flex justify-between text-sm font-body">
+                    <span className="text-muted-foreground">Treatment</span>
+                    <span className="font-medium">{massage.name}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-body">
+                    <span className="text-muted-foreground">Duration</span>
+                    <span className="font-medium">{duration} minutes</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-body">
+                    <span className="text-muted-foreground">Day</span>
+                    <span className="font-medium">{dayLabel}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-body">
+                    <span className="text-muted-foreground">Time</span>
+                    <span className="font-medium">{time}</span>
+                  </div>
+                  <div className="border-t border-border pt-2 flex justify-between text-sm font-body">
+                    <span className="text-muted-foreground">Price</span>
+                    <span className="font-display text-xl font-semibold text-primary">{price}</span>
+                  </div>
+                </div>
 
-            <Button asChild className="w-full gradient-purple text-primary-foreground border-0 hover:opacity-90">
-              <a href={whatsappLink} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="w-4 h-4 mr-2" /> Confirm via WhatsApp
-              </a>
-            </Button>
-
-            <Button variant="ghost" size="sm" onClick={() => setStep(3)}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Back
-            </Button>
+                {session?.user ? (
+                  <>
+                    <Button
+                      className="w-full gradient-purple text-primary-foreground border-0 hover:opacity-90"
+                      onClick={handleConfirm}
+                      disabled={confirmBusy}
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" /> Confirm booking
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setStep(3)} disabled={confirmBusy}>
+                      <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <AuthOptions
+                      redirect={false}
+                      callbackUrl="/massage"
+                      guestLabel="Continue as guest"
+                      title="Sign in to confirm"
+                      description="Choose how you’d like to continue to confirm your booking."
+                    />
+                    <Button variant="ghost" size="sm" onClick={() => setStep(3)}>
+                      <ArrowLeft className="w-4 h-4 mr-1" /> Back
+                    </Button>
+                  </>
+                )}
               </div>
             )}
           </>

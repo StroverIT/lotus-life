@@ -119,19 +119,30 @@ async function main() {
     skipDuplicates: true,
   });
 
-  await prisma.massage.createMany({
-    data: massages.map((m) => ({
-      id: m.id,
-      name: m.name,
-      iconKey: m.iconKey,
-      price30: m.price30,
-      price60: m.price60,
-      description: m.description,
-      benefits: m.benefits,
-      availableDays: m.availableDays,
-    })),
-    skipDuplicates: true,
-  });
+  for (const m of massages) {
+    await prisma.massage.upsert({
+      where: { id: m.id },
+      update: {
+        name: m.name,
+        iconKey: m.iconKey,
+        price30: m.price30,
+        price60: m.price60,
+        description: m.description,
+        benefits: m.benefits,
+        availableDays: m.availableDays,
+      },
+      create: {
+        id: m.id,
+        name: m.name,
+        iconKey: m.iconKey,
+        price30: m.price30,
+        price60: m.price60,
+        description: m.description,
+        benefits: m.benefits,
+        availableDays: m.availableDays,
+      },
+    });
+  }
 
   // Day schedules + classes
   for (const day of weeklySchedule) {
