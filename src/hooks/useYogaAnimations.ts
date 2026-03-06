@@ -25,14 +25,14 @@ export function useYogaAnimations() {
       const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       intro
-        .from(".yy-nav", { y: -14, opacity: 0, duration: 0.55 })
-        .from(".yy-title", { y: 18, opacity: 0, duration: 0.65 }, "-=0.15")
-        .from(".yy-subtitle", { y: 12, opacity: 0, duration: 0.55 }, "-=0.35")
-        .from(".yy-bookNow", { scale: 0.96, opacity: 0, duration: 0.45 }, "-=0.25")
-        .from(".yy-scheduleTitle", { y: 10, opacity: 0, duration: 0.45 }, "-=0.15")
-        .to(".yy-day", { y: 0, opacity: 1, duration: 0.35, stagger: 0.06 }, "-=0.15")
-        .to(".yy-classCard", { y: 0, opacity: 1, duration: 0.55, stagger: 0.09 }, "-=0.1")
-        .from(".yy-pricing", { y: 8, opacity: 0, duration: 0.45 }, "-=0.2");
+        .from(".yy-nav", { y: -14, opacity: 0, duration: 0.4 })
+        .from(".yy-title", { y: 18, opacity: 0, duration: 0.5 }, "-=0.12")
+        .from(".yy-subtitle", { y: 12, opacity: 0, duration: 0.42 }, "-=0.3")
+        .from(".yy-bookNow", { scale: 0.96, opacity: 0, duration: 0.32 }, "-=0.22")
+        .from(".yy-scheduleTitle", { y: 10, opacity: 0, duration: 0.34 }, "-=0.12")
+        .to(".yy-day", { y: 0, opacity: 1, duration: 0.26, stagger: 0.05 }, "-=0.12")
+        .to(".yy-classCard", { y: 0, opacity: 1, duration: 0.4, stagger: 0.07 }, "-=0.08")
+        .from(".yy-pricing", { y: 8, opacity: 0, duration: 0.34 }, "-=0.18");
 
       // Subtle attention pulse for Book Now (once)
       const book = document.querySelector(".yy-bookNow");
@@ -44,9 +44,9 @@ export function useYogaAnimations() {
             scale: 1.04,
             yoyo: true,
             repeat: 3,
-            duration: 0.16,
+            duration: 0.12,
             ease: "power1.inOut",
-            delay: 0.75,
+            delay: 0.6,
           },
         );
       }
@@ -58,7 +58,7 @@ export function useYogaAnimations() {
         scrollTrigger: { trigger: ".yy-eventsTitle", start: "top 80%" },
         y: 14,
         opacity: 0,
-        duration: 0.6,
+        duration: 0.45,
         ease: "power3.out",
       });
 
@@ -66,8 +66,8 @@ export function useYogaAnimations() {
         scrollTrigger: { trigger: ".yy-events", start: "top 82%" },
         y: 16,
         opacity: 0,
-        duration: 0.6,
-        stagger: 0.12,
+        duration: 0.5,
+        stagger: 0.09,
         ease: "power3.out",
       });
 
@@ -79,8 +79,8 @@ export function useYogaAnimations() {
       );
 
       hoverEls.forEach((el) => {
-        const onEnter = () => gsap.to(el, { y: -6, duration: 0.22, ease: "power2.out" });
-        const onLeave = () => gsap.to(el, { y: 0, duration: 0.22, ease: "power2.out" });
+        const onEnter = () => gsap.to(el, { y: -6, duration: 0.18, ease: "power2.out" });
+        const onLeave = () => gsap.to(el, { y: 0, duration: 0.18, ease: "power2.out" });
 
         el.addEventListener("mouseenter", onEnter);
         el.addEventListener("mouseleave", onLeave);
@@ -102,8 +102,8 @@ export function useYogaAnimations() {
         await gsap.to(cards, {
           y: 10,
           opacity: 0,
-          duration: 0.18,
-          stagger: 0.03,
+          duration: 0.14,
+          stagger: 0.02,
           ease: "power2.in",
         });
       };
@@ -119,7 +119,7 @@ export function useYogaAnimations() {
           { scale: 1 },
           {
             scale: 1.06,
-            duration: 0.14,
+            duration: 0.1,
             yoyo: true,
             repeat: 1,
             ease: "power1.inOut",
