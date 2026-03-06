@@ -12,12 +12,12 @@ export function useHomeIntro() {
     if (!scope.current || prefersReducedMotion) return;
 
     const ctx = gsap.context(() => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      const tl = gsap.timeline({ defaults: { ease: "power1" } });
 
       tl.to(".ll-nav", { y: 0, opacity: 1, duration: 0.5 })
         .to(".ll-heroTitle", { y: 0, opacity: 1, duration: 0.6 }, "-=0.2")
         .to(".ll-heroTagline", { y: 0, opacity: 1, duration: 0.55 }, "-=0.45")
-        .to(".ll-featureCard", { y: 0, opacity: 1, duration: 0.55, stagger: 0.14 }, "-=0.2")
+        .to(".ll-featureCard", { y: 0, opacity: 1, duration: 0.15, stagger: 0.14 }, "-=0.39")
         .to(".ll-stat", { y: 0, opacity: 1, duration: 0.45, stagger: 0.08 }, "-=0.25");
     });
 

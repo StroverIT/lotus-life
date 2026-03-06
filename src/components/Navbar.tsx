@@ -57,7 +57,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="ll-nav opacity-0 -translate-y-2 fixed top-0 left-0 right-0 z-50 glass-purple">
+      <nav className="ll-nav fixed top-0 left-0 right-0 z-50 glass-purple">
         <div className="container mx-auto px-4">
           <div ref={shellRef} className="flex items-center justify-between h-16 md:h-20 gap-6">
             {/* Logo */}

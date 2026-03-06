@@ -1,10 +1,9 @@
- "use client";
+"use client";
 
-import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { Leaf, Users, Heart, Mountain, MapPin } from "lucide-react";
 import Layout from "@/components/Layout";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { fadeInUp, staggerChildren } from "@/lib/animations";
+import { useAboutAnimations } from "@/hooks/useAboutAnimations";
 
 const pillars = [
   { icon: Leaf, title: "Natural Harmony", description: "We work with nature, not against it. Our practices honor the body's natural rhythms and the mountain environment that surrounds us." },
@@ -14,137 +13,134 @@ const pillars = [
 ];
 
 const AboutPage = () => {
-  const heroRef = useRef<HTMLDivElement | null>(null);
-  const philosophyRef = useRef<HTMLDivElement | null>(null);
-  const pillarsRef = useRef<HTMLDivElement | null>(null);
-  const studiosRef = useRef<HTMLDivElement | null>(null);
-  const prefersReducedMotion = usePrefersReducedMotion();
-
-  useEffect(() => {
-    fadeInUp(
-      heroRef.current,
-      {
-        y: 20,
-        duration: 0.8,
-      },
-      prefersReducedMotion,
-    );
-
-    fadeInUp(
-      philosophyRef.current,
-      {
-        y: 20,
-        duration: 0.6,
-        delay: 0.1,
-      },
-      prefersReducedMotion,
-    );
-
-    staggerChildren(
-      pillarsRef.current,
-      {
-        y: 20,
-        duration: 0.6,
-        stagger: 0.1,
-      },
-      prefersReducedMotion,
-    );
-
-    staggerChildren(
-      studiosRef.current,
-      {
-        y: 20,
-        duration: 0.6,
-        stagger: 0.1,
-      },
-      prefersReducedMotion,
-    );
-  }, [prefersReducedMotion]);
+  const scope = useAboutAnimations();
 
   return (
     <Layout>
-      {/* Hero with background image */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80')" }}
-        />
-        <div className="absolute inset-0 bg-black/60" />
-        <div ref={heroRef} className="relative z-10 container mx-auto px-4 text-center">
-          <h1 className="font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
-            About Lotus Life
-          </h1>
-          <p className="text-accent text-lg font-body max-w-xl mx-auto">
-            Our story, philosophy, and the spaces where transformation happens.
-          </p>
-        </div>
-      </section>
-
-      {/* Philosophy */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 max-w-3xl">
-          <div ref={philosophyRef} className="text-center">
-            <h2 className="font-display text-4xl mb-8">Our Philosophy</h2>
-            <p className="text-muted-foreground font-body leading-relaxed text-lg mb-6">
-              Like the lotus flower that blooms from muddy waters into pure beauty, we believe every person carries within them the potential for profound transformation. Lotus Life was born from the desire to create a space where this transformation can unfold naturally.
+      <div ref={scope}>
+        {/* Hero with background image */}
+        <section className="relative py-24 md:py-32 overflow-hidden">
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80')",
+            }}
+          />
+          <div className="absolute inset-0 bg-black/60" />
+          <div className="aa-nav relative z-10 container mx-auto px-4 text-center">
+            <h1 className="aa-title font-display text-5xl md:text-7xl font-light text-primary-foreground mb-4">
+              About Lotus Life
+            </h1>
+            <p className="aa-subtitle text-accent text-lg font-body max-w-xl mx-auto">
+              Our story, philosophy, and the spaces where transformation happens.
             </p>
-            <p className="text-muted-foreground font-body leading-relaxed text-lg">
-              In the shadow of the Pirin Mountains, we've built a sanctuary where ancient healing arts meet modern understanding. Whether you come to stretch, to heal, to move, or simply to breathe — you'll find what you need here.
-            </p>
+            <Link
+              href="/contact"
+              className="aa-bookNow inline-flex items-center justify-center mt-6 px-6 py-2.5 rounded-full text-sm font-medium text-primary-foreground gradient-purple shadow-sm hover:opacity-90 transition-all"
+            >
+              Book Now
+            </Link>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Pillars */}
-      <section className="py-20 bg-secondary">
-        <div className="container mx-auto px-4">
-          <h2 className="font-display text-4xl text-center mb-14">What We Stand For</h2>
-          <div ref={pillarsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {pillars.map((pillar, i) => (
-              <div
-                key={pillar.title}
-                className="rounded-xl bg-card border border-border p-8 text-center hover:shadow-lg hover:border-primary/20 transition-all"
-              >
-                <div className="w-12 h-12 rounded-full gradient-purple flex items-center justify-center mx-auto mb-5">
-                  <pillar.icon className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <h3 className="font-display text-xl mb-3">{pillar.title}</h3>
-                <p className="text-muted-foreground text-sm font-body leading-relaxed">{pillar.description}</p>
+        {/* Philosophy */}
+        <section className="aa-philosophy py-20">
+          <div className="container mx-auto px-4 max-w-3xl">
+            <div className="text-center">
+              <h2 className="aa-philoTitle font-display text-4xl mb-8">
+                Our Philosophy
+              </h2>
+              <div className="aa-philoText space-y-6">
+                <p className="text-muted-foreground font-body leading-relaxed text-lg">
+                  Like the lotus flower that blooms from muddy waters into pure beauty, we believe
+                  every person carries within them the potential for profound transformation. Lotus
+                  Life was born from the desire to create a space where this transformation can
+                  unfold naturally.
+                </p>
+                <p className="text-muted-foreground font-body leading-relaxed text-lg">
+                  In the shadow of the Pirin Mountains, we've built a sanctuary where ancient
+                  healing arts meet modern understanding. Whether you come to stretch, to heal, to
+                  move, or simply to breathe — you'll find what you need here.
+                </p>
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Studios */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="font-display text-4xl text-center mb-14">Our Studios</h2>
-          <div ref={studiosRef} className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {[
-              { name: "Pirin Hall", address: "ul. Glazne 14, Bansko", desc: "Our larger space with panoramic mountain views. Home to group yoga classes, dance meditation, and special events. Equipped with aerial silks, sound healing instruments, and heated floors.", image: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&q=80" },
-              { name: "Rodopi Hall", address: "ul. Tsar Simeon 22, Bansko", desc: "An intimate studio perfect for smaller groups and private sessions. All massage therapies are offered here, along with face yoga, qi-gong, and personal wellness consultations.", image: "https://images.unsplash.com/photo-1588286840104-8957b019727f?w=600&q=80" },
-            ].map((studio) => (
-              <div
-                key={studio.name}
-                className="rounded-xl border border-border bg-card overflow-hidden"
-              >
+        {/* Pillars / Values */}
+        <section className="aa-values py-20 bg-secondary">
+          <div className="container mx-auto px-4">
+            <h2 className="aa-valuesTitle font-display text-4xl text-center mb-14">
+              What We Stand For
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {pillars.map((pillar) => (
                 <div
-                  className="h-48 bg-cover bg-center"
-                  style={{ backgroundImage: `url('${studio.image}')` }}
-                />
-                <div className="p-8">
-                  <h3 className="font-display text-2xl mb-2">{studio.name}</h3>
-                  <p className="flex items-center gap-1.5 text-sm text-primary font-body mb-4">
-                    <MapPin className="w-4 h-4" /> {studio.address}
+                  key={pillar.title}
+                  className="aa-value aa-hoverLift rounded-xl bg-card border border-border p-8 text-center hover:shadow-lg hover:border-primary/20 transition-all"
+                >
+                  <div className="w-12 h-12 rounded-full gradient-purple flex items-center justify-center mx-auto mb-5">
+                    <pillar.icon className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <h3 className="font-display text-xl mb-3">{pillar.title}</h3>
+                  <p className="text-muted-foreground text-sm font-body leading-relaxed">
+                    {pillar.description}
                   </p>
-                  <p className="text-muted-foreground text-sm font-body leading-relaxed">{studio.desc}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* Studios */}
+        <section className="aa-studios py-20">
+          <div className="container mx-auto px-4">
+            <h2 className="aa-studiosTitle font-display text-4xl text-center mb-14">
+              Our Studios
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {[
+                {
+                  name: "Pirin Hall",
+                  address: "ul. Glazne 14, Bansko",
+                  desc: "Our larger space with panoramic mountain views. Home to group yoga classes, dance meditation, and special events. Equipped with aerial silks, sound healing instruments, and heated floors.",
+                  image:
+                    "https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=600&q=80",
+                },
+                {
+                  name: "Rodopi Hall",
+                  address: "ul. Tsar Simeon 22, Bansko",
+                  desc: "An intimate studio perfect for smaller groups and private sessions. All massage therapies are offered here, along with face yoga, qi-gong, and personal wellness consultations.",
+                  image:
+                    "https://images.unsplash.com/photo-1588286840104-8957b019727f?w=600&q=80",
+                },
+              ].map((studio) => (
+                <div
+                  key={studio.name}
+                  className="aa-studioCard aa-hoverLift rounded-xl border border-border bg-card overflow-hidden"
+                >
+                  <div
+                    className="h-48 bg-cover bg-center"
+                    style={{ backgroundImage: `url('${studio.image}')` }}
+                  />
+                  <div className="p-8">
+                    <h3 className="aa-studioTitle font-display text-2xl mb-2">
+                      {studio.name}
+                    </h3>
+                    <p className="aa-studioAddress flex items-center gap-1.5 text-sm text-primary font-body mb-4">
+                      <MapPin className="w-4 h-4" /> {studio.address}
+                    </p>
+                    <p className="aa-studioDesc text-muted-foreground text-sm font-body leading-relaxed">
+                      {studio.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
     </Layout>
   );
 };
