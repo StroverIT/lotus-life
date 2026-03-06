@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { gsap } from "gsap";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Clock, MapPin, User, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import EventSignupDialog from "@/components/EventSignupDialog";
+import { MODAL_IDS } from "@/constants/modalIds";
+import { usePendingModal } from "@/context/PendingModalContext";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useYogaAnimations } from "@/hooks/useYogaAnimations";
 import type { DaySchedule, YogaEvent } from "@/types/catalog";
@@ -38,6 +41,16 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
 
   const shouldAnimate = usePageFirstVisit("yoga");
   const scope = useYogaAnimations(shouldAnimate);
+  const pathname = usePathname();
+  const { getStoredModalId, clearPendingModal } = usePendingModal();
+
+  useEffect(() => {
+    const stored = getStoredModalId();
+    if (stored === MODAL_IDS.EVENT_SIGNUP) {
+      setSignupOpen(true);
+      clearPendingModal();
+    }
+  }, [pathname, getStoredModalId, clearPendingModal]);
 
   useEffect(() => {
     if (initialSchedule !== undefined) setSchedule(initialSchedule);

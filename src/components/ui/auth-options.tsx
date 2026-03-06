@@ -21,6 +21,8 @@ export interface AuthOptionsProps {
   callbackUrl?: string;
   /** If true, OAuth uses redirect. */
   redirect?: boolean;
+  /** Unique modal ID; when set and redirect is true, stored in localStorage so this modal can be reopened after OAuth return. */
+  modalId?: string;
   /** Optional title shown above the buttons. */
   title?: string;
   /** Optional description. */
@@ -36,6 +38,7 @@ export function AuthOptions({
   resetSignal,
   callbackUrl = "/",
   redirect = true,
+  modalId,
   title,
   description,
   className,
@@ -58,6 +61,9 @@ export function AuthOptions({
   const handleOAuth = async (provider: "google" | "facebook") => {
     setOauthBusy(true);
     try {
+      if (redirect && modalId && typeof window !== "undefined") {
+        window.localStorage.setItem("openModalOnReturn", modalId);
+      }
       const res = await signIn(provider, {
         callbackUrl,
         redirect,

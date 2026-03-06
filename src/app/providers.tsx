@@ -8,6 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { PageAnimationsProvider } from "@/context/PageAnimationContext";
+import { PendingModalProvider } from "@/context/PendingModalContext";
 
 export function AppShellProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -17,11 +18,13 @@ export function AppShellProviders({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <PageAnimationsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              {children}
-            </TooltipProvider>
+            <PendingModalProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                {children}
+              </TooltipProvider>
+            </PendingModalProvider>
           </PageAnimationsProvider>
         </ThemeProvider>
       </QueryClientProvider>

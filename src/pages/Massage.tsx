@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Clock, Check, ArrowRight, type LucideIcon } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import MassageBookingDialog from "@/components/MassageBookingDialog";
+import MassageBookingDialog, { type MassageBookingDialogHandle } from "@/components/MassageBookingDialog";
+import { MODAL_IDS } from "@/constants/modalIds";
+import { usePendingModal } from "@/context/PendingModalContext";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMassageAnimations } from "@/hooks/useMassageAnimations";
 import type { Massage } from "@/types/catalog";
@@ -20,6 +23,19 @@ const MassagePage = () => {
 
   const shouldAnimate = usePageFirstVisit("massage");
   const scope = useMassageAnimations(shouldAnimate);
+  const pathname = usePathname();
+  const { getStoredModalId, clearPendingModal } = usePendingModal();
+  const openMassageModalRef = useRef<MassageBookingDialogHandle>(null);
+
+  useEffect(() => {
+    const stored = getStoredModalId();
+
+    console.log("pathname", pathname, "stored", stored);
+    if (stored === MODAL_IDS.MASSAGE_BOOKING) {
+      openMassageModalRef.current?.openTheModal();
+      clearPendingModal();
+    }
+  }, [pathname, getStoredModalId, clearPendingModal]);
 
   useEffect(() => {
     const t = setTimeout(() => setContentLoaded(true), 400);
@@ -118,49 +134,49 @@ const MassagePage = () => {
 
                 <div className="mm-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                   {massages.map((massage) => (
-                <div
-                  key={massage.id}
-                  className="mm-card mm-hoverLift group rounded-xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all flex flex-col"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 rounded-full gradient-purple flex items-center justify-center">
-                      <massage.icon className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <div className="mm-price text-right">
-                      <span className="text-xs text-muted-foreground font-body block">from</span>
-                      <span className="mm-priceNum text-xl font-display font-semibold text-primary">
-                        {massage.price30}
-                      </span>
-                    </div>
-                  </div>
+                    <div
+                      key={massage.id}
+                      className="mm-card mm-hoverLift group rounded-xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all flex flex-col"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="w-10 h-10 rounded-full gradient-purple flex items-center justify-center">
+                          <massage.icon className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                        <div className="mm-price text-right">
+                          <span className="text-xs text-muted-foreground font-body block">from</span>
+                          <span className="mm-priceNum text-xl font-display font-semibold text-primary">
+                            {massage.price30}
+                          </span>
+                        </div>
+                      </div>
 
-                  <h3 className="mm-cardTitle font-display text-2xl mb-3">
-                    {massage.name}
-                  </h3>
-                  <p className="mm-cardDesc text-muted-foreground text-sm font-body mb-5 flex-1">
-                    {massage.description}
-                  </p>
+                      <h3 className="mm-cardTitle font-display text-2xl mb-3">
+                        {massage.name}
+                      </h3>
+                      <p className="mm-cardDesc text-muted-foreground text-sm font-body mb-5 flex-1">
+                        {massage.description}
+                      </p>
 
-                  <div className="flex flex-wrap gap-2 mb-6">
-                    {massage.benefits.map((b) => (
-                      <span
-                        key={b}
-                        className="mm-benefit flex items-center gap-1 text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full font-body"
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {massage.benefits.map((b) => (
+                          <span
+                            key={b}
+                            className="mm-benefit flex items-center gap-1 text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-full font-body"
+                          >
+                            <Check className="w-3 h-3" /> {b}
+                          </span>
+                        ))}
+                      </div>
+
+                      <Button
+                        onClick={() => handleBook(massage)}
+                        className="mm-cardCta w-full gradient-purple text-primary-foreground border-0 hover:opacity-90"
                       >
-                        <Check className="w-3 h-3" /> {b}
-                      </span>
-                    ))}
-                  </div>
-
-                  <Button
-                    onClick={() => handleBook(massage)}
-                    className="mm-cardCta w-full gradient-purple text-primary-foreground border-0 hover:opacity-90"
-                  >
-                    Book Now
-                  </Button>
+                        Book Now
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
                 <div className="mm-membersBanner text-center mt-12">
                   <p className="text-muted-foreground font-body text-sm mb-4">
@@ -179,6 +195,7 @@ const MassagePage = () => {
         </section>
 
         <MassageBookingDialog
+          ref={openMassageModalRef}
           massage={selectedMassage}
           open={dialogOpen}
           onOpenChange={setDialogOpen}

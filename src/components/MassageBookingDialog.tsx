@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Clock, ArrowLeft, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { AuthOptions } from "@/components/ui/auth-options";
 import { cn } from "@/lib/utils";
 import type { Massage } from "@/types/catalog";
+import { MODAL_IDS } from "@/constants/modalIds";
 import { toast } from "@/components/ui/sonner";
 import { addDays, addMonths, format, getDay, startOfDay } from "date-fns";
 
@@ -15,13 +16,18 @@ const MASSAGE_TIME_SLOTS = [
   "14:00", "15:00", "16:00", "17:00", "18:00",
 ];
 
+export interface MassageBookingDialogHandle {
+  openTheModal: () => void;
+}
+
 interface Props {
   massage: Massage | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
+const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
+  function MassageBookingDialog({ massage, open, onOpenChange }, ref) {
   const { data: session, status } = useSession();
   const [step, setStep] = useState(1);
   const [authChecked, setAuthChecked] = useState(false);
@@ -70,6 +76,10 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
     onOpenChange(o);
   };
 
+  useImperativeHandle(ref, () => ({
+    openTheModal: () => onOpenChange(true),
+  }), [onOpenChange]);
+
   useEffect(() => {
     if (!open) return;
     if (status === "loading") {
@@ -96,7 +106,20 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
       .catch(() => setTakenSlots(new Set()));
   }, [open, tomorrowStart]);
 
-  if (!massage) return null;
+  if (!massage) {
+    return (
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Massage booking</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground font-body py-4">
+            Please select a massage from the list below.
+          </p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   const price = duration === "30" ? massage.price30 : massage.price60;
 
@@ -332,6 +355,7 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
                       resetSignal={guestFormResetKey}
                       redirect={true}
                       callbackUrl="/massage"
+                      modalId={MODAL_IDS.MASSAGE_BOOKING}
                       title="Sign in or enter your details"
                       description="Continue with Google or Facebook, or enter your details below to confirm your booking."
                     />
@@ -347,6 +371,6 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 export default MassageBookingDialog;

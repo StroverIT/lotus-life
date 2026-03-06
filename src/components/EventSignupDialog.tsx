@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { MODAL_IDS } from "@/constants/modalIds";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
@@ -31,6 +32,9 @@ const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime 
   const handleOAuth = async (provider: "google" | "facebook") => {
     setBusy(true);
     try {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("openModalOnReturn", MODAL_IDS.EVENT_SIGNUP);
+      }
       const res = await signIn(provider, {
         callbackUrl: "/yoga",
         redirect: true,
