@@ -20,43 +20,68 @@ declare global {
   }
 }
 
-const YogaPage = () => {
+type YogaPageProps = {
+  initialSchedule?: DaySchedule[];
+  initialEvents?: YogaEvent[];
+};
+
+const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
   const [selectedDay, setSelectedDay] = useState(0);
-  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
-  const [events, setEvents] = useState<YogaEvent[]>([]);
+  const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule ?? []);
+  const [events, setEvents] = useState<YogaEvent[]>(initialEvents ?? []);
   const [signupOpen, setSignupOpen] = useState(false);
   const [signupEvent, setSignupEvent] = useState<{ name: string; day?: string; time?: string }>({
     name: "",
   });
-  const [contentLoaded, setContentLoaded] = useState(false);
+  const hasInitialData = initialSchedule !== undefined && initialEvents !== undefined;
+  const [contentLoaded, setContentLoaded] = useState(hasInitialData);
 
   const shouldAnimate = usePageFirstVisit("yoga");
   const scope = useYogaAnimations(shouldAnimate);
 
   useEffect(() => {
-    const t = setTimeout(() => setContentLoaded(true), 400);
-    return () => clearTimeout(t);
-  }, []);
+    if (initialSchedule !== undefined) setSchedule(initialSchedule);
+    if (initialEvents !== undefined) setEvents(initialEvents);
+    if (hasInitialData) setContentLoaded(true);
+  }, [initialSchedule, initialEvents, hasInitialData]);
 
   useEffect(() => {
+    if (hasInitialData) return;
     let alive = true;
+    const opts: RequestInit = { cache: "no-store" };
     (async () => {
       try {
-        const [scheduleRes, eventsRes] = await Promise.all([fetch("/api/schedule"), fetch("/api/events")]);
-        const [scheduleJson, eventsJson] = await Promise.all([scheduleRes.json(), eventsRes.json()]);
+        const [scheduleRes, eventsRes] = await Promise.all([
+          fetch("/api/schedule", opts),
+          fetch("/api/events", opts),
+        ]);
+        const [scheduleJson, eventsJson] = await Promise.all([
+          scheduleRes.json().catch(() => null),
+          eventsRes.json().catch(() => null),
+        ]);
         if (!alive) return;
-        setSchedule(scheduleJson as DaySchedule[]);
-        setEvents(eventsJson as YogaEvent[]);
+        const nextSchedule =
+          scheduleRes.ok && Array.isArray(scheduleJson)
+            ? (scheduleJson as DaySchedule[])
+            : [];
+        const nextEvents =
+          eventsRes.ok && Array.isArray(eventsJson)
+            ? (eventsJson as YogaEvent[])
+            : [];
+        setSchedule(nextSchedule);
+        setEvents(nextEvents);
       } catch {
         if (!alive) return;
         setSchedule([]);
         setEvents([]);
+      } finally {
+        if (alive) setContentLoaded(true);
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [hasInitialData]);
 
   const hasSchedule = schedule && schedule.length > 0;
   const currentDayIndex = hasSchedule

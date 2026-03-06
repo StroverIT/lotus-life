@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient, type AuthType, type UserRole, type VisitType } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { readFile } from "node:fs/promises";
