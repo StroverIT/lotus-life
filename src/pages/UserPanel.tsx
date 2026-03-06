@@ -278,7 +278,7 @@ const UserPanel = () => {
                         </Button>
                       ) : (
                         <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                          <Link to="/contact">Choose Plan</Link>
+                          <Link href="/contact">Choose Plan</Link>
                         </Button>
                       )}
                     </div>
