@@ -170,6 +170,49 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
         toast.info("You're already signed up for this event");
         return;
       }
+      if (yogaClassId || yogaEventId) {
+        (async () => {
+          try {
+            if (yogaClassId) {
+              const res = await fetch("/api/schedule-bookings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ yogaClassId }),
+              });
+              const data = (await res.json()) as { ok?: boolean; error?: string };
+              if (res.ok && data.ok) {
+                toast.success(`You're signed up for ${name}`);
+                setBookedClassIds((prev) => new Set(prev).add(yogaClassId));
+              } else if (res.status === 409) {
+                toast.info("You're already signed up for this class");
+                setBookedClassIds((prev) => new Set(prev).add(yogaClassId));
+              } else {
+                toast.error(data.error ?? "Booking failed");
+              }
+            } else if (yogaEventId) {
+              const res = await fetch("/api/event-bookings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ yogaEventId }),
+              });
+              const data = (await res.json()) as { ok?: boolean; error?: string };
+              if (res.ok && data.ok) {
+                toast.success(`You're signed up for ${name}`);
+                setBookedEventIds((prev) => new Set(prev).add(yogaEventId));
+              } else if (res.status === 409) {
+                toast.info("You're already signed up for this event");
+                setBookedEventIds((prev) => new Set(prev).add(yogaEventId));
+              } else {
+                toast.error(data.error ?? "Booking failed");
+              }
+            }
+          } catch {
+            toast.error("Booking failed");
+          }
+        })();
+        return;
+      }
+      return;
     }
     setSignupEvent({ name, day, time, yogaClassId, yogaEventId });
     setSignupOpen(true);

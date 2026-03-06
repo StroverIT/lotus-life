@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { AuthError, requireUser } from "@/lib/apiAuth";
+import { AuthError, getAuthContext, requireUser } from "@/lib/apiAuth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -32,11 +32,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { prismaUser } = await requireUser();
-    const userId = prismaUser!.id;
-
-    const body = (await request.json()) as { yogaClassId: string };
-    const { yogaClassId } = body;
+    const body = (await request.json()) as {
+      yogaClassId: string;
+      guestName?: string;
+      guestEmail?: string;
+      guestPhone?: string;
+    };
+    const { yogaClassId, guestName: gName, guestEmail: gEmail, guestPhone: gPhone } = body;
 
     if (!yogaClassId || typeof yogaClassId !== "string") {
       return NextResponse.json(
@@ -45,18 +47,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await prisma.yogaClass.findUnique({
+    const existingClass = await prisma.yogaClass.findUnique({
       where: { id: yogaClassId },
     });
-    if (!existing) {
+    if (!existingClass) {
       return NextResponse.json(
         { ok: false, error: "class_not_found" },
         { status: 404 }
       );
     }
 
+    let userId: string | null = null;
+    let guestName: string | null = null;
+    let guestEmail: string | null = null;
+    let guestPhone: string | null = null;
+
+    try {
+      const ctx = await getAuthContext();
+      if (ctx.prismaUser) {
+        userId = ctx.prismaUser.id;
+        const alreadyBooked = await prisma.scheduleBooking.findUnique({
+          where: { userId_yogaClassId: { userId: ctx.prismaUser.id, yogaClassId } },
+        });
+        if (alreadyBooked) {
+          return NextResponse.json({ ok: false, error: "already_booked" }, { status: 409 });
+        }
+      } else {
+        const name = typeof gName === "string" ? gName.trim() : "";
+        const email = typeof gEmail === "string" ? gEmail.trim() : "";
+        const phone = typeof gPhone === "string" ? gPhone.trim() : "";
+        if (!name || !email || !phone) {
+          return NextResponse.json(
+            { ok: false, error: "guest_name_email_phone_required" },
+            { status: 400 }
+          );
+        }
+        guestName = name;
+        guestEmail = email;
+        guestPhone = phone;
+      }
+    } catch {
+      const name = typeof gName === "string" ? gName.trim() : "";
+      const email = typeof gEmail === "string" ? gEmail.trim() : "";
+      const phone = typeof gPhone === "string" ? gPhone.trim() : "";
+      if (!name || !email || !phone) {
+        return NextResponse.json(
+          { ok: false, error: "guest_name_email_phone_required" },
+          { status: 400 }
+        );
+      }
+      guestName = name;
+      guestEmail = email;
+      guestPhone = phone;
+    }
+
     await prisma.scheduleBooking.create({
-      data: { userId, yogaClassId },
+      data: { userId, yogaClassId, guestName, guestEmail, guestPhone },
     });
 
     return NextResponse.json({ ok: true });

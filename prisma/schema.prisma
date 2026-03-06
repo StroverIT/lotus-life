@@ -146,11 +146,14 @@ model MassageBooking {
 }
 
 model ScheduleBooking {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String     @id @default(cuid())
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   yogaClassId String
-  yogaClass   YogaClass @relation(fields: [yogaClassId], references: [id], onDelete: Cascade)
+  yogaClass   YogaClass  @relation(fields: [yogaClassId], references: [id], onDelete: Cascade)
+  guestName   String?
+  guestEmail  String?
+  guestPhone  String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -159,11 +162,14 @@ model ScheduleBooking {
 }
 
 model EventBooking {
-  id           String    @id @default(cuid())
-  userId       String
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
   yogaEventId  String
-  yogaEvent    YogaEvent @relation(fields: [yogaEventId], references: [id], onDelete: Cascade)
+  yogaEvent    YogaEvent  @relation(fields: [yogaEventId], references: [id], onDelete: Cascade)
+  guestName    String?
+  guestEmail   String?
+  guestPhone   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
