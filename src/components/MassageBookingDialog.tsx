@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Clock, ArrowLeft, CheckCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,13 +11,45 @@ import { MODAL_IDS } from "@/constants/modalIds";
 import { toast } from "@/components/ui/sonner";
 import { addDays, addMonths, format, getDay, startOfDay } from "date-fns";
 
+const STORAGE_KEY = "openModalOnReturn";
+
 const MASSAGE_TIME_SLOTS = [
   "08:00", "09:00", "10:00", "11:00", "12:00", "13:00",
   "14:00", "15:00", "16:00", "17:00", "18:00",
 ];
 
+export interface MassageBookingDraftData {
+  step?: number;
+  massageId?: string;
+  duration?: "30" | "60";
+  day?: string;
+  time?: string;
+}
+
+interface DraftState {
+  step: number;
+  authChecked: boolean;
+  duration: "30" | "60" | null;
+  day: Date | null;
+  time: string | null;
+  confirmBusy: boolean;
+  guestFormResetKey: number;
+}
+
+const INITIAL_DRAFT: DraftState = {
+  step: 1,
+  authChecked: false,
+  duration: null,
+  day: null,
+  time: null,
+  confirmBusy: false,
+  guestFormResetKey: 0,
+};
+
 export interface MassageBookingDialogHandle {
   openTheModal: () => void;
+  getData: () => MassageBookingDraftData;
+  setData: (data: MassageBookingDraftData) => void;
 }
 
 interface Props {
@@ -29,14 +61,10 @@ interface Props {
 const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
   function MassageBookingDialog({ massage, open, onOpenChange }, ref) {
   const { data: session, status } = useSession();
-  const [step, setStep] = useState(1);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [duration, setDuration] = useState<"30" | "60" | null>(null);
-  const [day, setDay] = useState<Date | null>(null);
-  const [time, setTime] = useState<string | null>(null);
-  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [draft, setDraft] = useState<DraftState>(INITIAL_DRAFT);
   const [takenSlots, setTakenSlots] = useState<Set<string>>(new Set());
-  const [guestFormResetKey, setGuestFormResetKey] = useState(0);
+
+  const { step, authChecked, duration, day, time, confirmBusy, guestFormResetKey } = draft;
 
   const todayStart = useMemo(() => startOfDay(new Date()), []);
   const tomorrowStart = useMemo(() => addDays(todayStart, 1), [todayStart]);
@@ -62,32 +90,57 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
     [massage?.availableDays, weekdayNamesToNumber]
   );
 
-  const reset = () => {
-    setStep(1);
-    setAuthChecked(false);
-    setDuration(null);
-    setDay(null);
-    setTime(null);
-    setConfirmBusy(false);
-  };
+  const reset = () => setDraft(INITIAL_DRAFT);
 
   const handleOpenChange = (o: boolean) => {
     if (!o) reset();
     onOpenChange(o);
   };
 
-  useImperativeHandle(ref, () => ({
-    openTheModal: () => onOpenChange(true),
-  }), [onOpenChange]);
+  const getData = useCallback((): MassageBookingDraftData => {
+    const data: MassageBookingDraftData = {
+      step: draft.step,
+      massageId: massage?.id,
+      duration: draft.duration ?? undefined,
+      day: draft.day ? format(draft.day, "yyyy-MM-dd") : undefined,
+      time: draft.time ?? undefined,
+    };
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ modalId: MODAL_IDS.MASSAGE_BOOKING, data })
+      );
+    }
+    return data;
+  }, [draft.step, draft.duration, draft.day, draft.time, massage?.id]);
+
+  const setData = useCallback((d: MassageBookingDraftData) => {
+    setDraft((prev) => ({
+      ...prev,
+      ...(d.step != null && d.step >= 1 && d.step <= 4 && { step: d.step }),
+      ...(d.duration === "30" || d.duration === "60" ? { duration: d.duration } : {}),
+      ...(d.day ? { day: new Date(d.day) } : {}),
+      ...(d.time ? { time: d.time } : {}),
+    }));
+  }, []);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openTheModal: () => onOpenChange(true),
+      getData,
+      setData,
+    }),
+    [onOpenChange, getData, setData]
+  );
 
   useEffect(() => {
     if (!open) return;
     if (status === "loading") {
-      setAuthChecked(false);
+      setDraft((prev) => ({ ...prev, authChecked: false }));
       return;
     }
-    setAuthChecked(true);
-    setStep(1);
+    setDraft((prev) => ({ ...prev, authChecked: true }));
   }, [open, status]);
 
   useEffect(() => {
@@ -137,7 +190,7 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
 
   const handleConfirm = async () => {
     if (!day || !time || !duration) return;
-    setConfirmBusy(true);
+    setDraft((prev) => ({ ...prev, confirmBusy: true }));
     try {
       const res = await fetch("/api/massage-bookings", {
         method: "POST",
@@ -160,13 +213,13 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
       const message = e instanceof Error ? e.message : "Booking failed";
       toast.error(message);
     } finally {
-      setConfirmBusy(false);
+      setDraft((prev) => ({ ...prev, confirmBusy: false }));
     }
   };
 
   const handleConfirmAsGuest = async (guestData: { name: string; email: string; phone: string }) => {
     if (!day || !time || !duration) return;
-    setConfirmBusy(true);
+    setDraft((prev) => ({ ...prev, confirmBusy: true }));
     try {
       const res = await fetch("/api/massage-bookings", {
         method: "POST",
@@ -187,13 +240,13 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
       }
       toast.success("Booking confirmed");
       reset();
-      setGuestFormResetKey((k) => k + 1);
+      setDraft((prev) => ({ ...prev, guestFormResetKey: prev.guestFormResetKey + 1 }));
       onOpenChange(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Booking failed";
       toast.error(message);
     } finally {
-      setConfirmBusy(false);
+      setDraft((prev) => ({ ...prev, confirmBusy: false }));
     }
   };
 
@@ -231,7 +284,7 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
                   {(["30", "60"] as const).map((d) => (
                     <button
                       key={d}
-                      onClick={() => { setDuration(d); setStep(2); }}
+                      onClick={() => setDraft((prev) => ({ ...prev, duration: d, step: 2 }))}
                       className={cn(
                         "rounded-xl border-2 p-6 text-center transition-all hover:border-primary/50",
                         duration === d ? "border-primary bg-primary/5" : "border-border"
@@ -257,16 +310,13 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
                     mode="single"
                     selected={day ?? undefined}
                     onSelect={(date) => {
-                      if (date) {
-                        setDay(date);
-                        setStep(3);
-                      }
+                      if (date) setDraft((prev) => ({ ...prev, day: date, step: 3 }));
                     }}
                     disabled={isDayDisabled}
                     defaultMonth={tomorrowStart}
                   />
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="mt-2 self-start">
+                <Button variant="ghost" size="sm" onClick={() => setDraft((prev) => ({ ...prev, step: 1 }))} className="mt-2 self-start">
                   <ArrowLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
               </div>
@@ -286,10 +336,7 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
                         type="button"
                         disabled={isTaken}
                         onClick={() => {
-                          if (!isTaken) {
-                            setTime(t);
-                            setStep(4);
-                          }
+                          if (!isTaken) setDraft((prev) => ({ ...prev, time: t, step: 4 }));
                         }}
                         className={cn(
                           "rounded-lg border-2 py-3 px-2 text-center text-sm font-body font-medium transition-all hover:border-primary/50",
@@ -302,7 +349,7 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
                     );
                   })}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setStep(2)} className="mt-2">
+                <Button variant="ghost" size="sm" onClick={() => setDraft((prev) => ({ ...prev, step: 2 }))} className="mt-2">
                   <ArrowLeft className="w-4 h-4 mr-1" /> Back
                 </Button>
               </div>
@@ -343,7 +390,7 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
                     >
                       <CheckCircle className="w-4 h-4 mr-2" /> Confirm booking
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setStep(3)} disabled={confirmBusy}>
+                    <Button variant="ghost" size="sm" onClick={() => setDraft((prev) => ({ ...prev, step: 3 }))} disabled={confirmBusy}>
                       <ArrowLeft className="w-4 h-4 mr-1" /> Back
                     </Button>
                   </>
@@ -356,10 +403,11 @@ const MassageBookingDialog = forwardRef<MassageBookingDialogHandle, Props>(
                       redirect={true}
                       callbackUrl="/massage"
                       modalId={MODAL_IDS.MASSAGE_BOOKING}
+                      onBeforeOAuthRedirect={getData}
                       title="Sign in or enter your details"
                       description="Continue with Google or Facebook, or enter your details below to confirm your booking."
                     />
-                    <Button variant="ghost" size="sm" onClick={() => setStep(3)} disabled={confirmBusy}>
+                    <Button variant="ghost" size="sm" onClick={() => setDraft((prev) => ({ ...prev, step: 3 }))} disabled={confirmBusy}>
                       <ArrowLeft className="w-4 h-4 mr-1" /> Back
                     </Button>
                   </>

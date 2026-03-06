@@ -1,19 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Clock, MapPin, User, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import EventSignupDialog from "@/components/EventSignupDialog";
+import EventSignupDialog, {
+  type EventSignupDialogHandle,
+  type EventSignupDraftData,
+} from "@/components/EventSignupDialog";
 import { MODAL_IDS } from "@/constants/modalIds";
 import { usePendingModal } from "@/context/PendingModalContext";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useYogaAnimations } from "@/hooks/useYogaAnimations";
+import { toast } from "@/components/ui/sonner";
 import type { DaySchedule, YogaEvent } from "@/types/catalog";
 
 declare global {
@@ -33,24 +38,42 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
   const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule ?? []);
   const [events, setEvents] = useState<YogaEvent[]>(initialEvents ?? []);
   const [signupOpen, setSignupOpen] = useState(false);
-  const [signupEvent, setSignupEvent] = useState<{ name: string; day?: string; time?: string }>({
-    name: "",
-  });
+  const [signupEvent, setSignupEvent] = useState<{
+    name: string;
+    day?: string;
+    time?: string;
+    yogaClassId?: string;
+    yogaEventId?: string;
+  }>({ name: "" });
+  const [bookedClassIds, setBookedClassIds] = useState<Set<string>>(new Set());
+  const [bookedEventIds, setBookedEventIds] = useState<Set<string>>(new Set());
   const hasInitialData = initialSchedule !== undefined && initialEvents !== undefined;
   const [contentLoaded, setContentLoaded] = useState(hasInitialData);
 
   const shouldAnimate = usePageFirstVisit("yoga");
   const scope = useYogaAnimations(shouldAnimate);
   const pathname = usePathname();
-  const { getStoredModalId, clearPendingModal } = usePendingModal();
+  const { data: session } = useSession();
+  const { getStoredModalData, clearPendingModal } = usePendingModal();
+  const eventSignupRef = useRef<EventSignupDialogHandle>(null);
 
   useEffect(() => {
-    const stored = getStoredModalId();
-    if (stored === MODAL_IDS.EVENT_SIGNUP) {
-      setSignupOpen(true);
+    const stored = getStoredModalData();
+    if (stored?.modalId !== MODAL_IDS.EVENT_SIGNUP) return;
+    const data = stored.data as unknown as EventSignupDraftData | undefined;
+    const draft = data ?? { eventName: "" };
+    setSignupEvent({
+      name: draft.eventName ?? "",
+      day: draft.eventDay,
+      time: draft.eventTime,
+      yogaClassId: draft.yogaClassId,
+      yogaEventId: draft.yogaEventId,
+    });
+    setTimeout(() => {
+      eventSignupRef.current?.openTheModal();
       clearPendingModal();
-    }
-  }, [pathname, getStoredModalId, clearPendingModal]);
+    }, 0);
+  }, [pathname, getStoredModalData, clearPendingModal]);
 
   useEffect(() => {
     if (initialSchedule !== undefined) setSchedule(initialSchedule);
@@ -96,14 +119,59 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
     };
   }, [hasInitialData]);
 
+  useEffect(() => {
+    if (!session?.user) {
+      setBookedClassIds(new Set());
+      setBookedEventIds(new Set());
+      return;
+    }
+    let alive = true;
+    (async () => {
+      try {
+        const [classRes, eventRes] = await Promise.all([
+          fetch("/api/schedule-bookings"),
+          fetch("/api/event-bookings"),
+        ]);
+        const classData = (await classRes.json()) as { yogaClassIds?: string[] };
+        const eventData = (await eventRes.json()) as { yogaEventIds?: string[] };
+        if (!alive) return;
+        setBookedClassIds(new Set(classData.yogaClassIds ?? []));
+        setBookedEventIds(new Set(eventData.yogaEventIds ?? []));
+      } catch {
+        if (!alive) return;
+        setBookedClassIds(new Set());
+        setBookedEventIds(new Set());
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [session?.user, signupOpen]);
+
   const hasSchedule = schedule && schedule.length > 0;
   const currentDayIndex = hasSchedule
     ? Math.min(selectedDay, schedule.length - 1)
     : 0;
   const currentDay = hasSchedule ? schedule[currentDayIndex] : null;
 
-  const openSignup = (name: string, day?: string, time?: string) => {
-    setSignupEvent({ name, day, time });
+  const openSignup = (
+    name: string,
+    day?: string,
+    time?: string,
+    yogaClassId?: string,
+    yogaEventId?: string
+  ) => {
+    if (session?.user) {
+      if (yogaClassId && bookedClassIds.has(yogaClassId)) {
+        toast.info("You're already signed up for this class");
+        return;
+      }
+      if (yogaEventId && bookedEventIds.has(yogaEventId)) {
+        toast.info("You're already signed up for this event");
+        return;
+      }
+    }
+    setSignupEvent({ name, day, time, yogaClassId, yogaEventId });
     setSignupOpen(true);
   };
 
@@ -239,10 +307,12 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
                                 cls.name,
                                 currentDay?.day,
                                 cls.time,
+                                cls.id,
                               )
                             }
+                            disabled={!!(session?.user && bookedClassIds.has(cls.id))}
                           >
-                            Sign Up
+                            {session?.user && bookedClassIds.has(cls.id) ? "Already signed up" : "Sign Up"}
                           </Button>
                         </div>
                       </div>
@@ -320,10 +390,11 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
                     variant="outline"
                     className="border-primary text-primary hover:bg-primary/5"
                     onClick={() =>
-                      openSignup(event.name, event.dateLabel, event.time)
+                      openSignup(event.name, event.dateLabel, event.time, undefined, event.id)
                     }
+                    disabled={!!(session?.user && bookedEventIds.has(event.id))}
                   >
-                    Reserve Spot <ArrowRight className="w-4 h-4 ml-1" />
+                    {session?.user && bookedEventIds.has(event.id) ? "Already signed up" : <>Reserve Spot <ArrowRight className="w-4 h-4 ml-1" /></>}
                   </Button>
                 </div>
               ))}
@@ -334,11 +405,14 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
         </section>
 
         <EventSignupDialog
+          ref={eventSignupRef}
           open={signupOpen}
           onOpenChange={setSignupOpen}
           eventName={signupEvent.name}
           eventDay={signupEvent.day}
           eventTime={signupEvent.time}
+          yogaClassId={signupEvent.yogaClassId}
+          yogaEventId={signupEvent.yogaEventId}
         />
       </div>
     </Layout>

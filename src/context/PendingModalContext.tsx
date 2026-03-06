@@ -2,16 +2,23 @@
 
 import { createContext, useCallback, useContext, type ReactNode } from "react";
 
-const STORAGE_KEY = "openModalOnReturn";
+export const STORAGE_KEY = "openModalOnReturn";
+
+export interface StoredModalPayload {
+  modalId: string;
+  data?: Record<string, unknown> | null;
+}
 
 interface PendingModalContextType {
   getStoredModalId: () => string | null;
+  getStoredModalData: () => StoredModalPayload | null;
   clearPendingModal: () => void;
 }
 
 const PendingModalContext = createContext<PendingModalContextType>({
   getStoredModalId: () => null,
-  clearPendingModal: () => { },
+  getStoredModalData: () => null,
+  clearPendingModal: () => {},
 });
 
 export function usePendingModal() {
@@ -21,7 +28,25 @@ export function usePendingModal() {
 export function PendingModalProvider({ children }: { children: ReactNode }) {
   const getStoredModalId = useCallback(() => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as StoredModalPayload;
+      return parsed.modalId ?? raw;
+    } catch {
+      return raw;
+    }
+  }, []);
+
+  const getStoredModalData = useCallback((): StoredModalPayload | null => {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as StoredModalPayload;
+    } catch {
+      return { modalId: raw, data: null };
+    }
   }, []);
 
   const clearPendingModal = useCallback(() => {
@@ -30,7 +55,7 @@ export function PendingModalProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <PendingModalContext.Provider value={{ getStoredModalId, clearPendingModal }}>
+    <PendingModalContext.Provider value={{ getStoredModalId, getStoredModalData, clearPendingModal }}>
       {children}
     </PendingModalContext.Provider>
   );

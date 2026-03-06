@@ -63,6 +63,8 @@ model User {
 
   visits Visit[]
   massageBookings MassageBooking[]
+  scheduleBookings ScheduleBooking[]
+  eventBookings EventBooking[]
 
   accounts Account[]
   sessions Session[]
@@ -92,6 +94,7 @@ model YogaClass {
 
   dayScheduleId String
   daySchedule   DaySchedule @relation(fields: [dayScheduleId], references: [id], onDelete: Cascade)
+  scheduleBookings ScheduleBooking[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -106,6 +109,8 @@ model YogaEvent {
   hall        String
   price       String
   description String
+
+  eventBookings EventBooking[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -138,6 +143,32 @@ model MassageBooking {
   duration   Int      // 30 or 60 minutes
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model ScheduleBooking {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yogaClassId String
+  yogaClass   YogaClass @relation(fields: [yogaClassId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, yogaClassId])
+}
+
+model EventBooking {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yogaEventId  String
+  yogaEvent    YogaEvent @relation(fields: [yogaEventId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, yogaEventId])
 }
 
 model Visit {

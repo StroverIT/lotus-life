@@ -7,7 +7,10 @@ import { Clock, Check, ArrowRight, type LucideIcon } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import MassageBookingDialog, { type MassageBookingDialogHandle } from "@/components/MassageBookingDialog";
+import MassageBookingDialog, {
+  type MassageBookingDialogHandle,
+  type MassageBookingDraftData,
+} from "@/components/MassageBookingDialog";
 import { MODAL_IDS } from "@/constants/modalIds";
 import { usePendingModal } from "@/context/PendingModalContext";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
@@ -24,18 +27,24 @@ const MassagePage = () => {
   const shouldAnimate = usePageFirstVisit("massage");
   const scope = useMassageAnimations(shouldAnimate);
   const pathname = usePathname();
-  const { getStoredModalId, clearPendingModal } = usePendingModal();
+  const { getStoredModalData, clearPendingModal } = usePendingModal();
   const openMassageModalRef = useRef<MassageBookingDialogHandle>(null);
 
   useEffect(() => {
-    const stored = getStoredModalId();
-
-    console.log("pathname", pathname, "stored", stored);
-    if (stored === MODAL_IDS.MASSAGE_BOOKING) {
-      openMassageModalRef.current?.openTheModal();
-      clearPendingModal();
+    const stored = getStoredModalData();
+    if (stored?.modalId !== MODAL_IDS.MASSAGE_BOOKING) return;
+    const data = stored.data as MassageBookingDraftData | undefined;
+    if (data?.massageId && massages.length === 0) return;
+    if (data?.massageId && massages.length) {
+      setSelectedMassage(massages.find((m) => m.id === data.massageId) ?? null);
     }
-  }, [pathname, getStoredModalId, clearPendingModal]);
+    const draft = data ?? {};
+    setTimeout(() => {
+      openMassageModalRef.current?.openTheModal();
+      openMassageModalRef.current?.setData(draft);
+      clearPendingModal();
+    }, 0);
+  }, [pathname, getStoredModalData, clearPendingModal, massages]);
 
   useEffect(() => {
     const t = setTimeout(() => setContentLoaded(true), 400);

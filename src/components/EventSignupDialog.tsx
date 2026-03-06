@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { MODAL_IDS } from "@/constants/modalIds";
@@ -6,35 +6,131 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 
+const STORAGE_KEY = "openModalOnReturn";
+
+export interface EventSignupDraftData {
+  eventName: string;
+  eventDay?: string;
+  eventTime?: string;
+  yogaClassId?: string;
+  yogaEventId?: string;
+}
+
+export interface EventSignupDialogHandle {
+  openTheModal: () => void;
+  getData: () => EventSignupDraftData;
+}
+
 interface EventSignupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventName: string;
   eventDay?: string;
   eventTime?: string;
+  yogaClassId?: string;
+  yogaEventId?: string;
 }
 
-const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime }: EventSignupDialogProps) => {
+const EventSignupDialog = forwardRef<EventSignupDialogHandle, EventSignupDialogProps>(
+  function EventSignupDialog({ open, onOpenChange, eventName, eventDay, eventTime, yogaClassId, yogaEventId }, ref) {
   const { data: session } = useSession();
   const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const detail = [eventDay, eventTime].filter(Boolean).join(" at ");
 
+  const getData = useCallback((): EventSignupDraftData => {
+    const data: EventSignupDraftData = { eventName, eventDay, eventTime, yogaClassId, yogaEventId };
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ modalId: MODAL_IDS.EVENT_SIGNUP, data })
+      );
+    }
+    return data;
+  }, [eventName, eventDay, eventTime, yogaClassId, yogaEventId]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openTheModal: () => onOpenChange(true),
+      getData,
+    }),
+    [onOpenChange, getData]
+  );
+
   useEffect(() => {
     if (!open || !session?.user) return;
-    toast({
-      title: "You're signed up!",
-      description: `You've been registered for ${eventName}${detail ? ` on ${detail}` : ""}.`,
-    });
-    onOpenChange(false);
-  }, [open, session, eventName, detail, onOpenChange]);
+    if (!yogaClassId && !yogaEventId) {
+      toast({
+        title: "You're signed up!",
+        description: `You've been registered for ${eventName}${detail ? ` on ${detail}` : ""}.`,
+      });
+      onOpenChange(false);
+      return;
+    }
+    let alive = true;
+    setCreating(true);
+    (async () => {
+      try {
+        if (yogaClassId) {
+          const res = await fetch("/api/schedule-bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ yogaClassId }),
+          });
+          const data = (await res.json()) as { ok?: boolean; error?: string };
+          if (!alive) return;
+          if (!res.ok || !data.ok) {
+            if (res.status === 409) {
+              toast({ title: "Already signed up", description: "You're already registered for this class." });
+            } else {
+              toast({ title: "Booking failed", description: data.error ?? "Please try again." });
+            }
+            onOpenChange(false);
+            return;
+          }
+        }
+        if (yogaEventId) {
+          const res = await fetch("/api/event-bookings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ yogaEventId }),
+          });
+          const data = (await res.json()) as { ok?: boolean; error?: string };
+          if (!alive) return;
+          if (!res.ok || !data.ok) {
+            if (res.status === 409) {
+              toast({ title: "Already signed up", description: "You're already registered for this event." });
+            } else {
+              toast({ title: "Booking failed", description: data.error ?? "Please try again." });
+            }
+            onOpenChange(false);
+            return;
+          }
+        }
+        toast({
+          title: "You're signed up!",
+          description: `You've been registered for ${eventName}${detail ? ` on ${detail}` : ""}.`,
+        });
+        onOpenChange(false);
+      } catch {
+        if (!alive) return;
+        toast({ title: "Booking failed", description: "Please try again." });
+        onOpenChange(false);
+      } finally {
+        if (alive) setCreating(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [open, session?.user, eventName, detail, onOpenChange, yogaClassId, yogaEventId]);
 
   const handleOAuth = async (provider: "google" | "facebook") => {
     setBusy(true);
     try {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem("openModalOnReturn", MODAL_IDS.EVENT_SIGNUP);
-      }
+      getData();
       const res = await signIn(provider, {
         callbackUrl: "/yoga",
         redirect: true,
@@ -63,7 +159,29 @@ const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime 
     }
   };
 
-  if (session?.user) return null;
+  if (session?.user) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Sign Up</DialogTitle>
+            <DialogDescription className="font-body">
+              {(yogaClassId || yogaEventId) && creating
+                ? "Confirming your spot…"
+                : "Reserve your spot for "}
+              {!(yogaClassId || yogaEventId) || !creating ? (
+                <>
+                  <span className="font-semibold text-foreground">{eventName}</span>
+                  {eventDay && <> on <span className="font-semibold text-foreground">{eventDay}</span></>}
+                  {eventTime && <> at <span className="font-semibold text-foreground">{eventTime}</span></>}
+                </>
+              ) : null}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,6 +222,6 @@ const EventSignupDialog = ({ open, onOpenChange, eventName, eventDay, eventTime 
       </DialogContent>
     </Dialog>
   );
-};
+});
 
 export default EventSignupDialog;

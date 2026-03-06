@@ -23,6 +23,8 @@ export interface AuthOptionsProps {
   redirect?: boolean;
   /** Unique modal ID; when set and redirect is true, stored in localStorage so this modal can be reopened after OAuth return. */
   modalId?: string;
+  /** Called before OAuth redirect; use to save draft data to localStorage (e.g. modal id + form data). If provided, localStorage is not set with only modalId. */
+  onBeforeOAuthRedirect?: () => void;
   /** Optional title shown above the buttons. */
   title?: string;
   /** Optional description. */
@@ -39,6 +41,7 @@ export function AuthOptions({
   callbackUrl = "/",
   redirect = true,
   modalId,
+  onBeforeOAuthRedirect,
   title,
   description,
   className,
@@ -61,8 +64,12 @@ export function AuthOptions({
   const handleOAuth = async (provider: "google" | "facebook") => {
     setOauthBusy(true);
     try {
-      if (redirect && modalId && typeof window !== "undefined") {
-        window.localStorage.setItem("openModalOnReturn", modalId);
+      if (redirect && typeof window !== "undefined") {
+        if (onBeforeOAuthRedirect) {
+          onBeforeOAuthRedirect();
+        } else if (modalId) {
+          window.localStorage.setItem("openModalOnReturn", modalId);
+        }
       }
       const res = await signIn(provider, {
         callbackUrl,
