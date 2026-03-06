@@ -9,12 +9,33 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export function useContactAnimations() {
+export function useContactAnimations(enabled = true) {
   const scope = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     if (!scope.current || prefersReducedMotion) return;
+
+    if (!enabled) {
+      const ctx = gsap.context(() => {
+        gsap.set(
+          [
+            ".cc-nav",
+            ".cc-title",
+            ".cc-subtitle",
+            ".cc-bookNowTop",
+            ".cc-card",
+            ".cc-studio",
+            ".cc-hourRow",
+            ".cc-formTitle",
+            ".cc-field",
+            ".cc-submit",
+          ],
+          { opacity: 1, y: 0, scale: 1 },
+        );
+      }, scope);
+      return () => ctx.revert();
+    }
 
     const cleanups: Array<() => void> = [];
 
@@ -154,7 +175,7 @@ export function useContactAnimations() {
       cleanups.forEach((fn) => fn());
       ctx.revert();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, enabled]);
 
   return scope;
 }

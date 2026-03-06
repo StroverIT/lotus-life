@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { gsap } from "gsap";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
-export function useHoverLift(selector = ".ll-hoverLift") {
+export function useHoverLift(selector = ".ll-hoverLift", enabled = true) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion || !enabled) return;
 
     const cards = Array.from(document.querySelectorAll<HTMLElement>(selector));
 
@@ -30,6 +30,6 @@ export function useHoverLift(selector = ".ll-hoverLift") {
     return () => {
       cleanups.forEach((fn) => fn());
     };
-  }, [selector, prefersReducedMotion]);
+  }, [selector, prefersReducedMotion, enabled]);
 }
 

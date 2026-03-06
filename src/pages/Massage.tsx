@@ -1,18 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Clock, Check, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { massageTypes, type MassageType } from "@/data/massages";
 import MassageBookingDialog from "@/components/MassageBookingDialog";
+import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMassageAnimations } from "@/hooks/useMassageAnimations";
 
 const MassagePage = () => {
   const [selectedMassage, setSelectedMassage] = useState<MassageType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const scope = useMassageAnimations();
+  const [contentLoaded, setContentLoaded] = useState(false);
+
+  const shouldAnimate = usePageFirstVisit("massage");
+  const scope = useMassageAnimations(shouldAnimate);
+
+  useEffect(() => {
+    const t = setTimeout(() => setContentLoaded(true), 400);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleBook = (massage: MassageType) => {
     setSelectedMassage(massage);
@@ -57,16 +67,32 @@ const MassagePage = () => {
         {/* Treatments */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <h2 className="mm-sectionTitle font-display text-4xl text-center mb-4">
-              Our Treatments
-            </h2>
-            <p className="mm-sectionIntro text-center text-muted-foreground font-body mb-14 max-w-lg mx-auto">
-              Each session is tailored to your needs. All treatments use organic, locally-sourced
-              mountain botanicals.
-            </p>
+            {!contentLoaded ? (
+              <>
+                <Skeleton className="h-10 w-48 mx-auto mb-4" />
+                <Skeleton className="h-4 w-96 mx-auto mb-14" />
+                <div className="mm-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} className="h-64 rounded-xl" />
+                  ))}
+                </div>
+                <div className="mm-membersBanner text-center mt-12">
+                  <Skeleton className="h-4 w-72 mx-auto mb-4" />
+                  <Skeleton className="h-4 w-40 mx-auto" />
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="mm-sectionTitle font-display text-4xl text-center mb-4">
+                  Our Treatments
+                </h2>
+                <p className="mm-sectionIntro text-center text-muted-foreground font-body mb-14 max-w-lg mx-auto">
+                  Each session is tailored to your needs. All treatments use organic, locally-sourced
+                  mountain botanicals.
+                </p>
 
-            <div className="mm-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {massageTypes.map((massage) => (
+                <div className="mm-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                  {massageTypes.map((massage) => (
                 <div
                   key={massage.id}
                   className="mm-card mm-hoverLift group rounded-xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all flex flex-col"
@@ -111,17 +137,19 @@ const MassagePage = () => {
               ))}
             </div>
 
-            <div className="mm-membersBanner text-center mt-12">
-              <p className="text-muted-foreground font-body text-sm mb-4">
-                Members enjoy up to 20% off all massage treatments
-              </p>
-              <Link
-                href="/memberships"
-                className="mm-membersCta inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all font-body text-sm"
-              >
-                View Memberships <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+                <div className="mm-membersBanner text-center mt-12">
+                  <p className="text-muted-foreground font-body text-sm mb-4">
+                    Members enjoy up to 20% off all massage treatments
+                  </p>
+                  <Link
+                    href="/memberships"
+                    className="mm-membersCta inline-flex items-center gap-2 text-primary font-medium hover:gap-3 transition-all font-body text-sm"
+                  >
+                    View Memberships <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
         </section>
 

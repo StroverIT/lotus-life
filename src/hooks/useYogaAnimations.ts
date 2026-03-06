@@ -9,12 +9,33 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export function useYogaAnimations() {
+export function useYogaAnimations(enabled = true) {
   const scope = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     if (!scope.current || prefersReducedMotion) return;
+
+    if (!enabled) {
+      const ctx = gsap.context(() => {
+        gsap.set(
+          [
+            ".yy-nav",
+            ".yy-title",
+            ".yy-subtitle",
+            ".yy-bookNow",
+            ".yy-scheduleTitle",
+            ".yy-day",
+            ".yy-classCard",
+            ".yy-pricing",
+            ".yy-eventsTitle",
+            ".yy-eventCard",
+          ],
+          { opacity: 1, y: 0, scale: 1 },
+        );
+      }, scope);
+      return () => ctx.revert();
+    }
 
     const cleanups: Array<() => void> = [];
 
@@ -132,7 +153,7 @@ export function useYogaAnimations() {
       cleanups.forEach((fn) => fn());
       ctx.revert();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, enabled]);
 
   return scope;
 }

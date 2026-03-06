@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles, Leaf, Users, Heart, Mountain } from "lucide-react";
 import Layout from "@/components/Layout";
+import { cn } from "@/lib/utils";
 import { useTheme } from "@/context/ThemeContext";
+import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useHomeIntro } from "@/hooks/useHomeIntro";
 import { useHomeScrollReveals } from "@/hooks/useHomeScrollReveals";
 import { useHoverLift } from "@/hooks/useHoverLift";
@@ -12,9 +14,11 @@ const Index = () => {
   const { season } = useTheme();
   const heroImage = season === "winter" ? "/hero-winter.jpg" : "/hero-summer.jpg";
 
-  const introScope = useHomeIntro();
-  const scrollScope = useHomeScrollReveals();
-  useHoverLift();
+  const shouldAnimate = usePageFirstVisit("home");
+
+  const introScope = useHomeIntro(shouldAnimate);
+  const scrollScope = useHomeScrollReveals(shouldAnimate);
+  useHoverLift(".ll-hoverLift", shouldAnimate);
 
   return (
     <Layout>
@@ -42,11 +46,11 @@ const Index = () => {
               <Sparkles className="w-5 h-5 text-accent" />
             </div>
 
-            <h1 className="ll-heroTitle opacity-0 translate-y-3 font-display text-6xl md:text-8xl lg:text-9xl font-light text-primary-foreground mb-6 tracking-tight">
+            <h1 className={cn("ll-heroTitle font-display text-6xl md:text-8xl lg:text-9xl font-light text-primary-foreground mb-6 tracking-tight", shouldAnimate && "opacity-0 translate-y-3")}>
               Lotus Life
             </h1>
 
-            <p className="ll-heroTagline opacity-0 translate-y-3 text-accent text-lg md:text-xl tracking-[0.2em] font-body font-light mb-16">
+            <p className={cn("ll-heroTagline text-accent text-lg md:text-xl tracking-[0.2em] font-body font-light mb-16", shouldAnimate && "opacity-0 translate-y-3")}>
               breathe · move · create
             </p>
 
@@ -55,7 +59,7 @@ const Index = () => {
               {/* Yoga Card */}
               <Link
                 href="/yoga"
-                className="ll-featureCard ll-hoverLift opacity-0 translate-y-4 group relative overflow-hidden rounded-2xl h-72 md:h-80 flex flex-col justify-end p-8 md:p-10 text-left transition-all duration-500 hover:shadow-[0_0_60px_-10px_hsl(var(--accent)_/_0.4)]"
+                className={cn("ll-featureCard ll-hoverLift group relative overflow-hidden rounded-2xl h-72 md:h-80 flex flex-col justify-end p-8 md:p-10 text-left transition-all duration-500 hover:shadow-[0_0_60px_-10px_hsl(var(--accent)_/_0.4)]", shouldAnimate && "opacity-0 translate-y-4")}
               >
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
@@ -81,7 +85,7 @@ const Index = () => {
               {/* Massage Card */}
               <Link
                 href="/massage"
-                className="ll-featureCard ll-hoverLift opacity-0 translate-y-4 group relative overflow-hidden rounded-2xl h-72 md:h-80 flex flex-col justify-end p-8 md:p-10 text-left transition-all duration-500 hover:shadow-[0_0_60px_-10px_hsl(var(--accent)_/_0.4)]"
+                className={cn("ll-featureCard ll-hoverLift group relative overflow-hidden rounded-2xl h-72 md:h-80 flex flex-col justify-end p-8 md:p-10 text-left transition-all duration-500 hover:shadow-[0_0_60px_-10px_hsl(var(--accent)_/_0.4)]", shouldAnimate && "opacity-0 translate-y-4")}
               >
                 <div
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
@@ -117,7 +121,7 @@ const Index = () => {
                 { number: "6", label: "Massage Therapies" },
                 { number: "2", label: "Mountain Studios" },
               ].map((stat) => (
-                <div key={stat.label} className="ll-stat opacity-0 translate-y-2">
+                <div key={stat.label} className={cn("ll-stat", shouldAnimate && "opacity-0 translate-y-2")}>
                   <p className="font-display text-5xl font-semibold text-primary mb-2">
                     {stat.number}
                   </p>
@@ -133,17 +137,17 @@ const Index = () => {
           <section className="ll-philosophy py-24">
             <div className="container mx-auto px-4 max-w-5xl">
               <div className="text-center mb-16">
-                <h2 className="ll-philoTitle opacity-0 translate-y-4 font-display text-4xl md:text-5xl mb-8 text-foreground">
+                <h2 className={cn("ll-philoTitle font-display text-4xl md:text-5xl mb-8 text-foreground", shouldAnimate && "opacity-0 translate-y-4")}>
                   Our <span className="text-gradient-purple">Philosophy</span>
                 </h2>
-                <p className="ll-philoText opacity-0 translate-y-3 text-muted-foreground font-body leading-relaxed text-lg max-w-3xl mx-auto mb-4">
+                <p className={cn("ll-philoText text-muted-foreground font-body leading-relaxed text-lg max-w-3xl mx-auto mb-4", shouldAnimate && "opacity-0 translate-y-3")}>
                   Nestled in the heart of Bansko, Lotus Life offers a sanctuary where ancient
                   wisdom meets modern wellness. Our two beautiful studio spaces -- Pirin Hall and
                   Rodopi Hall -- provide the perfect environment for your practice, whether you're
                   drawn to dynamic aerial yoga, peaceful meditation, or the flowing movements of
                   Tai Chi.
                 </p>
-                <p className="ll-philoText opacity-0 translate-y-3 text-muted-foreground font-body leading-relaxed text-lg max-w-3xl mx-auto">
+                <p className={cn("ll-philoText text-muted-foreground font-body leading-relaxed text-lg max-w-3xl mx-auto", shouldAnimate && "opacity-0 translate-y-3")}>
                   We believe in the transformative power of consistent practice. Our diverse class
                   offerings are designed to meet you where you are, guiding you toward greater
                   strength, flexibility, and inner peace.
@@ -179,7 +183,7 @@ const Index = () => {
                 ].map((pillar) => (
                   <div
                     key={pillar.title}
-                    className="ll-value opacity-0 translate-y-4 rounded-xl border border-border bg-card p-6 text-center hover:shadow-lg transition-shadow"
+                    className={cn("ll-value rounded-xl border border-border bg-card p-6 text-center hover:shadow-lg transition-shadow", shouldAnimate && "opacity-0 translate-y-4")}
                   >
                     <div className="w-12 h-12 rounded-full gradient-purple flex items-center justify-center mx-auto mb-4">
                       <pillar.icon className="w-5 h-5 text-primary-foreground" />

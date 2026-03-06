@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { gsap } from "gsap";
 import Link from "next/link";
 import { Clock, MapPin, User, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { weeklySchedule, yogaEvents } from "@/data/schedule";
 import { cn } from "@/lib/utils";
 import EventSignupDialog from "@/components/EventSignupDialog";
+import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useYogaAnimations } from "@/hooks/useYogaAnimations";
 
 const YogaPage = () => {
@@ -17,8 +19,15 @@ const YogaPage = () => {
   const [signupEvent, setSignupEvent] = useState<{ name: string; day?: string; time?: string }>({
     name: "",
   });
+  const [contentLoaded, setContentLoaded] = useState(false);
 
-  const scope = useYogaAnimations();
+  const shouldAnimate = usePageFirstVisit("yoga");
+  const scope = useYogaAnimations(shouldAnimate);
+
+  useEffect(() => {
+    const t = setTimeout(() => setContentLoaded(true), 400);
+    return () => clearTimeout(t);
+  }, []);
 
   const hasSchedule = weeklySchedule && weeklySchedule.length > 0;
   const currentDayIndex = hasSchedule
@@ -82,108 +91,140 @@ const YogaPage = () => {
         {/* Weekly Schedule */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <h2 className="yy-scheduleTitle font-display text-4xl text-center mb-12">
-              Weekly Schedule
-            </h2>
+            {!contentLoaded ? (
+              <>
+                <Skeleton className="h-10 w-48 mx-auto mb-12" />
+                <div className="flex gap-2 mb-10 justify-center flex-wrap">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <Skeleton key={i} className="h-10 w-20 rounded-full" />
+                  ))}
+                </div>
+                <div className="grid gap-4 max-w-3xl mx-auto">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-32 rounded-xl" />
+                  ))}
+                </div>
+                <Skeleton className="h-5 w-64 mx-auto mt-8" />
+              </>
+            ) : (
+              <>
+                <h2 className="yy-scheduleTitle font-display text-4xl text-center mb-12">
+                  Weekly Schedule
+                </h2>
 
-            {hasSchedule && (
-              <div className="yy-days flex overflow-x-auto gap-2 mb-10 pb-2 justify-center flex-wrap">
-                {weeklySchedule.map((day, i) => (
-                  <button
-                    key={day.day}
-                    onClick={() => onDayClick(i)}
-                    className={cn(
-                      "yy-day opacity-0 translate-y-2 px-5 py-2.5 rounded-full text-sm font-medium font-body transition-all whitespace-nowrap",
-                      currentDayIndex === i
-                        ? "is-active gradient-purple text-primary-foreground shadow-lg"
-                        : "bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary",
-                    )}
-                  >
-                    {day.day}
-                  </button>
-                ))}
-              </div>
-            )}
+                {hasSchedule && (
+                  <div className="yy-days flex overflow-x-auto gap-2 mb-10 pb-2 justify-center flex-wrap">
+                    {weeklySchedule.map((day, i) => (
+                      <button
+                        key={day.day}
+                        onClick={() => onDayClick(i)}
+                        className={cn(
+                          "yy-day px-5 py-2.5 rounded-full text-sm font-medium font-body transition-all whitespace-nowrap",
+                          shouldAnimate && "opacity-0 translate-y-2",
+                          currentDayIndex === i
+                            ? "is-active gradient-purple text-primary-foreground shadow-lg"
+                            : "bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                        )}
+                      >
+                        {day.day}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-            <div
-              key={currentDayIndex}
-              className="yy-classes grid gap-4 max-w-3xl mx-auto"
-            >
-              {currentDay?.classes?.length
-                ? currentDay.classes.map((cls) => (
-                  <div
-                    key={cls.id}
-                    className="yy-classCard yy-hoverLift opacity-0 translate-y-3 group rounded-xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-display text-2xl text-foreground mb-2">
-                          {cls.name}
-                        </h3>
-                        <p className="text-muted-foreground text-sm font-body mb-3">
-                          {cls.description}
-                        </p>
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-body">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" />
-                            {cls.time} · {cls.duration}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {cls.hall}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <User className="w-3.5 h-3.5" />
-                            {cls.instructor}
-                          </span>
+                <div
+                  key={currentDayIndex}
+                  className="yy-classes grid gap-4 max-w-3xl mx-auto"
+                >
+                  {currentDay?.classes?.length
+                    ? currentDay.classes.map((cls) => (
+                      <div
+                        key={cls.id}
+                        className={cn("yy-classCard yy-hoverLift group rounded-xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all", shouldAnimate && "opacity-0 translate-y-3")}
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="flex-1">
+                            <h3 className="font-display text-2xl text-foreground mb-2">
+                              {cls.name}
+                            </h3>
+                            <p className="text-muted-foreground text-sm font-body mb-3">
+                              {cls.description}
+                            </p>
+                            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-body">
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3.5 h-3.5" />
+                                {cls.time} · {cls.duration}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5" />
+                                {cls.hall}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <User className="w-3.5 h-3.5" />
+                                {cls.instructor}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            className="gradient-purple text-primary-foreground border-0 hover:opacity-90 shrink-0"
+                            onClick={() =>
+                              openSignup(
+                                cls.name,
+                                currentDay?.day,
+                                cls.time,
+                              )
+                            }
+                          >
+                            Sign Up
+                          </Button>
                         </div>
                       </div>
-                      <Button
-                        className="gradient-purple text-primary-foreground border-0 hover:opacity-90 shrink-0"
-                        onClick={() =>
-                          openSignup(
-                            cls.name,
-                            currentDay?.day,
-                            cls.time,
-                          )
-                        }
-                      >
-                        Sign Up
-                      </Button>
-                    </div>
-                  </div>
-                ))
-                : (
-                  <p className="text-center text-sm text-muted-foreground font-body">
-                    No classes scheduled yet for this day.
-                  </p>
-                )}
-            </div>
+                    ))
+                    : (
+                      <p className="text-center text-sm text-muted-foreground font-body">
+                        No classes scheduled yet for this day.
+                      </p>
+                    )}
+                </div>
 
-            <p className="yy-pricing text-center text-sm text-muted-foreground mt-8 font-body">
-              Single class: <span className="text-primary font-semibold">€10</span> ·
-              <Link
-                href="/memberships"
-                className="text-primary hover:underline ml-1"
-              >
-                View memberships →
-              </Link>
-            </p>
+                <p className="yy-pricing text-center text-sm text-muted-foreground mt-8 font-body">
+                  Single class: <span className="text-primary font-semibold">€10</span> ·
+                  <Link
+                    href="/memberships"
+                    className="text-primary hover:underline ml-1"
+                  >
+                    View memberships →
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
         </section>
 
         {/* Events */}
         <section className="py-20 bg-secondary">
           <div className="container mx-auto px-4">
-            <h2 className="yy-eventsTitle font-display text-4xl text-center mb-4">
-              Upcoming Events
-            </h2>
-            <p className="text-center text-muted-foreground font-body mb-12">
-              Special workshops and experiences
-            </p>
+            {!contentLoaded ? (
+              <>
+                <Skeleton className="h-10 w-56 mx-auto mb-4" />
+                <Skeleton className="h-4 w-72 mx-auto mb-12" />
+                <div className="yy-events grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <Skeleton key={i} className="h-48 rounded-xl" />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="yy-eventsTitle font-display text-4xl text-center mb-4">
+                  Upcoming Events
+                </h2>
+                <p className="text-center text-muted-foreground font-body mb-12">
+                  Special workshops and experiences
+                </p>
 
-            <div className="yy-events grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {yogaEvents.map((event) => (
+                <div className="yy-events grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                  {yogaEvents.map((event) => (
                 <div
                   key={event.id}
                   className="yy-eventCard yy-hoverLift rounded-xl border border-border bg-card p-8 hover:shadow-lg transition-shadow"
@@ -219,7 +260,9 @@ const YogaPage = () => {
                   </Button>
                 </div>
               ))}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </section>
 

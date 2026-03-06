@@ -1,17 +1,28 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Check, Star } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { memberships, singleClassPrice } from "@/data/memberships";
 import { cn } from "@/lib/utils";
+import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMembershipsAnimations } from "@/hooks/useMembershipsAnimations";
 
 const WHATSAPP_URL = "https://wa.me/359883317785";
 
 const MembershipsPage = () => {
-  const scope = useMembershipsAnimations();
+  const [contentLoaded, setContentLoaded] = useState(false);
+
+  const shouldAnimate = usePageFirstVisit("memberships");
+  const scope = useMembershipsAnimations(shouldAnimate);
+
+  useEffect(() => {
+    const t = setTimeout(() => setContentLoaded(true), 400);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <Layout>
@@ -52,8 +63,23 @@ const MembershipsPage = () => {
         {/* Pricing */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-              {memberships.map((plan) => {
+            {!contentLoaded ? (
+              <>
+                <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Skeleton key={i} className="h-80 rounded-2xl" />
+                  ))}
+                </div>
+                <div className="pp-dropin text-center mt-12 p-8 rounded-xl bg-secondary max-w-md mx-auto">
+                  <Skeleton className="h-6 w-32 mx-auto mb-2" />
+                  <Skeleton className="h-10 w-24 mx-auto mb-2" />
+                  <Skeleton className="h-4 w-48 mx-auto" />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                  {memberships.map((plan) => {
                 const currency = plan.price.replace(/\d/g, "").trim() || "€";
                 const amount = Number(
                   plan.price.replace(/[^\d]/g, ""),
@@ -146,15 +172,17 @@ const MembershipsPage = () => {
               })}
             </div>
 
-            <div className="pp-dropin text-center mt-12 p-8 rounded-xl bg-secondary max-w-md mx-auto">
-              <p className="font-display text-xl mb-1">Drop-in Class</p>
-              <p className="font-display text-3xl font-semibold text-primary mb-2">
-                {singleClassPrice}
-              </p>
-              <p className="text-muted-foreground text-sm font-body">
-                No commitment. Just show up and flow.
-              </p>
-            </div>
+                <div className="pp-dropin text-center mt-12 p-8 rounded-xl bg-secondary max-w-md mx-auto">
+                  <p className="font-display text-xl mb-1">Drop-in Class</p>
+                  <p className="font-display text-3xl font-semibold text-primary mb-2">
+                    {singleClassPrice}
+                  </p>
+                  <p className="text-muted-foreground text-sm font-body">
+                    No commitment. Just show up and flow.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </section>
       </div>

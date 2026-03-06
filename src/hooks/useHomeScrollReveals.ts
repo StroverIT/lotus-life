@@ -9,12 +9,22 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export function useHomeScrollReveals() {
+export function useHomeScrollReveals(enabled = true) {
   const scope = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     if (!scope.current || prefersReducedMotion) return;
+
+    if (!enabled) {
+      const ctx = gsap.context(() => {
+        gsap.set([".ll-philoTitle", ".ll-philoText", ".ll-value"], {
+          opacity: 1,
+          y: 0,
+        });
+      }, scope);
+      return () => ctx.revert();
+    }
 
     const ctx = gsap.context(() => {
       gsap.to(".ll-philoTitle", {
@@ -54,7 +64,7 @@ export function useHomeScrollReveals() {
     }, scope);
 
     return () => ctx.revert();
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, enabled]);
 
   return scope;
 }

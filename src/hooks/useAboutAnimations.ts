@@ -9,12 +9,37 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export function useAboutAnimations() {
+export function useAboutAnimations(enabled = true) {
   const scope = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     if (!scope.current || prefersReducedMotion) return;
+
+    if (!enabled) {
+      const ctx = gsap.context(() => {
+        gsap.set(
+          [
+            ".aa-nav",
+            ".aa-title",
+            ".aa-subtitle",
+            ".aa-bookNow",
+            ".aa-philoTitle",
+            ".aa-philoText",
+            ".aa-philoP",
+            ".aa-valuesTitle",
+            ".aa-value",
+            ".aa-studiosTitle",
+            ".aa-studioCard",
+            ".aa-studioCard .aa-studioTitle",
+            ".aa-studioCard .aa-studioAddress",
+            ".aa-studioCard .aa-studioDesc",
+          ],
+          { opacity: 1, y: 0, scale: 1 },
+        );
+      }, scope);
+      return () => ctx.revert();
+    }
 
     const cleanups: Array<() => void> = [];
 
@@ -144,7 +169,7 @@ export function useAboutAnimations() {
       cleanups.forEach((fn) => fn());
       ctx.revert();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, enabled]);
 
   return scope;
 }

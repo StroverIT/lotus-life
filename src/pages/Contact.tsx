@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useContactAnimations } from "@/hooks/useContactAnimations";
 
 const WHATSAPP_URL = "https://wa.me/359883317785";
@@ -14,7 +15,8 @@ const WHATSAPP_URL = "https://wa.me/359883317785";
 const ContactPage = () => {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
 
-  const scope = useContactAnimations();
+  const shouldAnimate = usePageFirstVisit("contact");
+  const scope = useContactAnimations(shouldAnimate);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

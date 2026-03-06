@@ -9,12 +9,40 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export function useMassageAnimations() {
+export function useMassageAnimations(enabled = true) {
   const scope = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     if (!scope.current || prefersReducedMotion) return;
+
+    if (!enabled) {
+      const ctx = gsap.context(() => {
+        gsap.set(
+          [
+            ".mm-nav",
+            ".mm-title",
+            ".mm-subtitle",
+            ".mm-bookNowTop",
+            ".mm-sectionTitle",
+            ".mm-sectionIntro",
+            ".mm-card",
+            ".mm-cardTitle",
+            ".mm-cardDesc",
+            ".mm-benefit",
+            ".mm-cardCta",
+            ".mm-membersBanner",
+            ".mm-membersCta",
+          ],
+          { opacity: 1, y: 0, scale: 1 },
+        );
+        gsap.utils.toArray<HTMLElement>(".mm-priceNum").forEach((el) => {
+          const endValue = el.textContent?.replace(/[^\d]/g, "") || "0";
+          if (endValue) el.textContent = endValue;
+        });
+      }, scope);
+      return () => ctx.revert();
+    }
 
     const cleanups: Array<() => void> = [];
 
@@ -173,7 +201,7 @@ export function useMassageAnimations() {
       cleanups.forEach((fn) => fn());
       ctx.revert();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, enabled]);
 
   return scope;
 }

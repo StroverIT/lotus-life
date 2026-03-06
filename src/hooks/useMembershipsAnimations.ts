@@ -9,12 +9,36 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export function useMembershipsAnimations() {
+export function useMembershipsAnimations(enabled = true) {
   const scope = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useLayoutEffect(() => {
     if (!scope.current || prefersReducedMotion) return;
+
+    if (!enabled) {
+      const ctx = gsap.context(() => {
+        gsap.set(
+          [
+            ".pp-nav",
+            ".pp-title",
+            ".pp-subtitle",
+            ".pp-bookNowTop",
+            ".pp-card",
+            ".pp-perk",
+            ".pp-cta",
+            ".pp-badge",
+            ".pp-dropin",
+          ],
+          { opacity: 1, y: 0, scale: 1 },
+        );
+        gsap.utils.toArray<HTMLElement>(".pp-priceNum").forEach((el) => {
+          const endValue = el.textContent?.replace(/[^\d]/g, "") || "0";
+          if (endValue) el.textContent = endValue;
+        });
+      }, scope);
+      return () => ctx.revert();
+    }
 
     const ctx = gsap.context(() => {
       const cleanups: Array<() => void> = [];
@@ -181,7 +205,7 @@ export function useMembershipsAnimations() {
     return () => {
       ctx.revert();
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, enabled]);
 
   return scope;
 }
