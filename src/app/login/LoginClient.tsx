@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Facebook, Chrome } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,11 +133,23 @@ export default function LoginClient() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                  <Button variant="outline" onClick={() => oauth("google")} disabled={busy}>
-                    Continue with Google
+                  <Button
+                    variant="outline"
+                    onClick={() => oauth("google")}
+                    disabled={busy}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Chrome className="h-4 w-4 text-primary" />
+                    <span>Continue with Google</span>
                   </Button>
-                  <Button variant="outline" onClick={() => oauth("facebook")} disabled={busy}>
-                    Continue with Facebook
+                  <Button
+                    variant="outline"
+                    onClick={() => oauth("facebook")}
+                    disabled={busy}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <Facebook className="h-4 w-4 text-primary" />
+                    <span>Continue with Facebook</span>
                   </Button>
                 </div>
 
