@@ -27,18 +27,17 @@ export function useContactAnimations() {
       tl.from(".cc-nav", { y: -14, opacity: 0, duration: 0.55 })
         .from(".cc-title", { y: 18, opacity: 0, duration: 0.65 }, "-=0.15")
         .from(".cc-subtitle", { y: 12, opacity: 0, duration: 0.55 }, "-=0.35")
-        .from(".cc-bookNowTop", { scale: 0.97, opacity: 0, duration: 0.45 }, "-=0.25")
-        .from(".cc-card", { y: 16, opacity: 0, duration: 0.55, stagger: 0.12 }, "-=0.1");
+        .from(".cc-bookNowTop", { scale: 0.97, opacity: 0, duration: 0.45 }, "-=0.25");
 
       // -----------------------------
-      // Studios + Hours (scroll reveal)
+      // "Let's Connect" block (cards + studios, top-to-bottom)
       // -----------------------------
-      gsap.from(".cc-studio", {
-        scrollTrigger: { trigger: ".cc-studios", start: "top 82%" },
+      gsap.from(".cc-card, .cc-studio", {
+        scrollTrigger: { trigger: ".cc-cards", start: "top 80%" },
         y: 14,
         opacity: 0,
-        duration: 0.55,
-        stagger: 0.12,
+        duration: 0.5,
+        stagger: 0.08,
         ease: "power3.out",
       });
 
