@@ -55,12 +55,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const ctx = await getAuthContext();
     const body = (await request.json()) as {
       massageId: string;
-      date: string; // ISO date string (YYYY-MM-DD)
-      time: string; // e.g. "10:00"
-      duration: number; // 30 or 60
+      date: string;
+      time: string;
+      duration: number;
+      guestName?: string;
+      guestEmail?: string;
+      guestPhone?: string;
     };
 
     const { massageId, date, time, duration } = body;
@@ -79,9 +81,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userId = ctx.prismaUser?.id ?? null;
-    const guestName = ctx.guest ? (ctx.session.user?.name ?? null) : null;
-    const guestEmail = ctx.guest ? (ctx.session.user?.email ?? null) : null;
+    let userId: string | null = null;
+    let guestName: string | null = null;
+    let guestEmail: string | null = null;
+    let guestPhone: string | null = null;
+
+    try {
+      const ctx = await getAuthContext();
+      userId = ctx.prismaUser?.id ?? null;
+      guestName = ctx.guest ? (ctx.session.user?.name ?? null) : null;
+      guestEmail = ctx.guest ? (ctx.session.user?.email ?? null) : null;
+    } catch {
+      const gName = typeof body.guestName === "string" ? body.guestName.trim() : "";
+      const gEmail = typeof body.guestEmail === "string" ? body.guestEmail.trim() : "";
+      const gPhone = typeof body.guestPhone === "string" ? body.guestPhone.trim() : "";
+      if (!gName || !gEmail || !gPhone) {
+        return NextResponse.json(
+          { ok: false, error: "guest_name_email_phone_required" },
+          { status: 400 }
+        );
+      }
+      guestName = gName;
+      guestEmail = gEmail;
+      guestPhone = gPhone;
+    }
 
     const booking = await prisma.massageBooking.create({
       data: {
@@ -89,6 +112,7 @@ export async function POST(request: NextRequest) {
         userId,
         guestName,
         guestEmail,
+        guestPhone,
         date: slotDate,
         time,
         duration,

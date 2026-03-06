@@ -1,22 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Chrome, Facebook } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/sonner";
 
 export interface AuthOptionsProps {
-  /** Callback after successful sign-in when using redirect: false (e.g. guest). */
-  onSuccess?: () => void;
-  /** Where to send the user after OAuth redirect. Ignored when redirect is false. */
+  /** Callback when guest form is submitted with valid name, email, phone. */
+  onGuestSubmit?: (data: { name: string; email: string; phone: string }) => void;
+  /** Disable form and submit button while parent is processing (e.g. booking in flight). */
+  busy?: boolean;
+  /** When this value changes, the guest form fields are reset to empty. */
+  resetSignal?: unknown;
+  /** Where to send the user after OAuth redirect. */
   callbackUrl?: string;
-  /** If true, OAuth and guest use redirect; if false, sign in in-place and call onSuccess for guest. */
+  /** If true, OAuth uses redirect. */
   redirect?: boolean;
-  /** Label for the guest button. */
-  guestLabel?: string;
   /** Optional title shown above the buttons. */
   title?: string;
   /** Optional description. */
@@ -24,19 +28,35 @@ export interface AuthOptionsProps {
   className?: string;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function AuthOptions({
-  onSuccess,
+  onGuestSubmit,
+  busy = false,
+  resetSignal,
   callbackUrl = "/",
   redirect = true,
-  guestLabel = "Continue as guest",
   title,
   description,
   className,
 }: AuthOptionsProps) {
-  const [busy, setBusy] = useState(false);
+  const [oauthBusy, setOauthBusy] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const prevResetSignalRef = useRef(resetSignal);
+
+  useEffect(() => {
+    if (prevResetSignalRef.current !== resetSignal) {
+      prevResetSignalRef.current = resetSignal;
+      setName("");
+      setEmail("");
+      setPhone("");
+    }
+  }, [resetSignal]);
 
   const handleOAuth = async (provider: "google" | "facebook") => {
-    setBusy(true);
+    setOauthBusy(true);
     try {
       const res = await signIn(provider, {
         callbackUrl,
@@ -47,29 +67,35 @@ export function AuthOptions({
       const message = e instanceof Error ? e.message : "Sign-in failed";
       toast.error(message);
     } finally {
-      setBusy(false);
+      setOauthBusy(false);
     }
   };
 
-  const handleGuest = async () => {
-    setBusy(true);
-    try {
-      const res = await signIn("guest", {
-        callbackUrl,
-        redirect: redirect ? true : false,
-      });
-      if ((res as any)?.error) throw new Error((res as any).error);
-      if (!redirect) {
-        toast.success("Signed in as guest");
-        onSuccess?.();
-      }
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : "Guest sign-in failed";
-      toast.error(message);
-    } finally {
-      setBusy(false);
+  const handleGuestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+    if (!trimmedName) {
+      toast.error("Name is required");
+      return;
     }
+    if (!trimmedEmail) {
+      toast.error("Email is required");
+      return;
+    }
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (!trimmedPhone) {
+      toast.error("Telephone number is required");
+      return;
+    }
+    onGuestSubmit?.({ name: trimmedName, email: trimmedEmail, phone: trimmedPhone });
   };
+
+  const isFormDisabled = busy || oauthBusy;
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
@@ -83,7 +109,7 @@ export function AuthOptions({
         variant="outline"
         className="w-full gap-2 font-body"
         onClick={() => handleOAuth("google")}
-        disabled={busy}
+        disabled={isFormDisabled}
       >
         <Chrome className="h-4 w-4" />
         Continue with Google
@@ -92,7 +118,7 @@ export function AuthOptions({
         variant="outline"
         className="w-full gap-2 font-body"
         onClick={() => handleOAuth("facebook")}
-        disabled={busy}
+        disabled={isFormDisabled}
       >
         <Facebook className="h-4 w-4" />
         Continue with Facebook
@@ -103,14 +129,60 @@ export function AuthOptions({
           or
         </span>
       </div>
-      <Button
-        type="button"
-        className="w-full gradient-purple text-primary-foreground border-0 hover:opacity-90 font-body"
-        onClick={handleGuest}
-        disabled={busy}
-      >
-        {guestLabel}
-      </Button>
+      <form onSubmit={handleGuestSubmit} className="flex flex-col gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="guest-name" className="font-body">
+            Name
+          </Label>
+          <Input
+            id="guest-name"
+            type="text"
+            placeholder="Your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={isFormDisabled}
+            required
+            className="font-body"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="guest-email" className="font-body">
+            Email
+          </Label>
+          <Input
+            id="guest-email"
+            type="email"
+            placeholder="your@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isFormDisabled}
+            required
+            className="font-body"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="guest-phone" className="font-body">
+            Telephone
+          </Label>
+          <Input
+            id="guest-phone"
+            type="tel"
+            placeholder="Your phone number"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            disabled={isFormDisabled}
+            required
+            className="font-body"
+          />
+        </div>
+        <Button
+          type="submit"
+          className="w-full gradient-purple text-primary-foreground border-0 hover:opacity-90 font-body"
+          disabled={isFormDisabled}
+        >
+          Confirm booking
+        </Button>
+      </form>
     </div>
   );
 }

@@ -30,6 +30,7 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
   const [time, setTime] = useState<string | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
   const [takenSlots, setTakenSlots] = useState<Set<string>>(new Set());
+  const [guestFormResetKey, setGuestFormResetKey] = useState(0);
 
   const todayStart = useMemo(() => startOfDay(new Date()), []);
   const tomorrowStart = useMemo(() => addDays(todayStart, 1), [todayStart]);
@@ -130,6 +131,40 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
         throw new Error(data.error ?? "Booking failed");
       }
       toast.success("Booking confirmed");
+      reset();
+      onOpenChange(false);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Booking failed";
+      toast.error(message);
+    } finally {
+      setConfirmBusy(false);
+    }
+  };
+
+  const handleConfirmAsGuest = async (guestData: { name: string; email: string; phone: string }) => {
+    if (!day || !time || !duration) return;
+    setConfirmBusy(true);
+    try {
+      const res = await fetch("/api/massage-bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          massageId: massage.id,
+          date: format(day, "yyyy-MM-dd"),
+          time,
+          duration: duration === "30" ? 30 : 60,
+          guestName: guestData.name,
+          guestEmail: guestData.email,
+          guestPhone: guestData.phone,
+        }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Booking failed");
+      }
+      toast.success("Booking confirmed");
+      reset();
+      setGuestFormResetKey((k) => k + 1);
       onOpenChange(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Booking failed";
@@ -292,13 +327,15 @@ const MassageBookingDialog = ({ massage, open, onOpenChange }: Props) => {
                 ) : (
                   <>
                     <AuthOptions
-                      redirect={false}
+                      onGuestSubmit={handleConfirmAsGuest}
+                      busy={confirmBusy}
+                      resetSignal={guestFormResetKey}
+                      redirect={true}
                       callbackUrl="/massage"
-                      guestLabel="Continue as guest"
-                      title="Sign in to confirm"
-                      description="Choose how you’d like to continue to confirm your booking."
+                      title="Sign in or enter your details"
+                      description="Continue with Google or Facebook, or enter your details below to confirm your booking."
                     />
-                    <Button variant="ghost" size="sm" onClick={() => setStep(3)}>
+                    <Button variant="ghost" size="sm" onClick={() => setStep(3)} disabled={confirmBusy}>
                       <ArrowLeft className="w-4 h-4 mr-1" /> Back
                     </Button>
                   </>

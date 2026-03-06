@@ -132,6 +132,7 @@ model MassageBooking {
   user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   guestName  String?
   guestEmail String?
+  guestPhone String?
   date       DateTime
   time       String
   duration   Int      // 30 or 60 minutes
