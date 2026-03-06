@@ -15,7 +15,6 @@ enum AuthType {
   CREDENTIALS
   GOOGLE
   FACEBOOK
-  GUEST
 }
 
 enum VisitType {
