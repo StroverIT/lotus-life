@@ -1,0 +1,23 @@
+[
+  {
+    "id": "evt-1",
+    "name": "Full Moon Sound Bath",
+    "dateLabel": "March 14, 2026",
+    "time": "20:00",
+    "duration": "2 hours",
+    "hall": "Pirin Hall",
+    "price": "€20",
+    "description": "A deeply immersive sound healing experience under the full moon energy. Limited to 15 participants."
+  },
+  {
+    "id": "evt-2",
+    "name": "Weekend Yoga Retreat",
+    "dateLabel": "March 21-22, 2026",
+    "time": "09:00 - 17:00",
+    "duration": "2 days",
+    "hall": "Both Halls",
+    "price": "€80",
+    "description": "A transformative weekend of yoga, meditation, and mountain walks in the heart of Bansko."
+  }
+]
+

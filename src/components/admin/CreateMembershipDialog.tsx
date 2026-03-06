@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { X, Plus } from "lucide-react";
-import type { Membership } from "@/data/memberships";
+import type { Membership } from "@/types/catalog";
 
 interface CreateMembershipDialogProps {
   open: boolean;

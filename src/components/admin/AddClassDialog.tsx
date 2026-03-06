@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { YogaClass } from "@/data/schedule";
+import type { YogaClass } from "@/types/catalog";
 
 interface AddClassDialogProps {
   open: boolean;
@@ -18,7 +18,7 @@ const AddClassDialog = ({ open, dayName, onOpenChange, onSave }: AddClassDialogP
   const [name, setName] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("60 min");
-  const [hall, setHall] = useState<"Pirin Hall" | "Rodopi Hall">("Pirin Hall");
+  const [hall, setHall] = useState("Pirin Hall");
   const [instructor, setInstructor] = useState("");
   const [description, setDescription] = useState("");
 
@@ -58,7 +58,7 @@ const AddClassDialog = ({ open, dayName, onOpenChange, onSave }: AddClassDialogP
           </div>
           <div>
             <Label>Hall</Label>
-            <Select value={hall} onValueChange={(v) => setHall(v as "Pirin Hall" | "Rodopi Hall")}>
+            <Select value={hall} onValueChange={(v) => setHall(v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Pirin Hall">Pirin Hall</SelectItem>

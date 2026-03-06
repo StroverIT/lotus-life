@@ -7,14 +7,23 @@ import { Clock, MapPin, User, ArrowRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { weeklySchedule, yogaEvents } from "@/data/schedule";
 import { cn } from "@/lib/utils";
 import EventSignupDialog from "@/components/EventSignupDialog";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useYogaAnimations } from "@/hooks/useYogaAnimations";
+import type { DaySchedule, YogaEvent } from "@/types/catalog";
+
+declare global {
+  interface Window {
+    __yyAnimateDayChange?: () => Promise<void> | void;
+    __yyPopActiveDay?: () => void;
+  }
+}
 
 const YogaPage = () => {
   const [selectedDay, setSelectedDay] = useState(0);
+  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
+  const [events, setEvents] = useState<YogaEvent[]>([]);
   const [signupOpen, setSignupOpen] = useState(false);
   const [signupEvent, setSignupEvent] = useState<{ name: string; day?: string; time?: string }>({
     name: "",
@@ -29,11 +38,31 @@ const YogaPage = () => {
     return () => clearTimeout(t);
   }, []);
 
-  const hasSchedule = weeklySchedule && weeklySchedule.length > 0;
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [scheduleRes, eventsRes] = await Promise.all([fetch("/api/schedule"), fetch("/api/events")]);
+        const [scheduleJson, eventsJson] = await Promise.all([scheduleRes.json(), eventsRes.json()]);
+        if (!alive) return;
+        setSchedule(scheduleJson as DaySchedule[]);
+        setEvents(eventsJson as YogaEvent[]);
+      } catch {
+        if (!alive) return;
+        setSchedule([]);
+        setEvents([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const hasSchedule = schedule && schedule.length > 0;
   const currentDayIndex = hasSchedule
-    ? Math.min(selectedDay, weeklySchedule.length - 1)
+    ? Math.min(selectedDay, schedule.length - 1)
     : 0;
-  const currentDay = hasSchedule ? weeklySchedule[currentDayIndex] : null;
+  const currentDay = hasSchedule ? schedule[currentDayIndex] : null;
 
   const openSignup = (name: string, day?: string, time?: string) => {
     setSignupEvent({ name, day, time });
@@ -41,7 +70,7 @@ const YogaPage = () => {
   };
 
   const onDayClick = async (index: number) => {
-    await (window as any).__yyAnimateDayChange?.();
+    await window.__yyAnimateDayChange?.();
     setSelectedDay(index);
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
@@ -54,7 +83,7 @@ const YogaPage = () => {
       );
     }
 
-    requestAnimationFrame(() => (window as any).__yyPopActiveDay?.());
+    requestAnimationFrame(() => window.__yyPopActiveDay?.());
   };
 
   return (
@@ -114,7 +143,7 @@ const YogaPage = () => {
 
                 {hasSchedule && (
                   <div className="yy-days flex overflow-x-auto gap-2 mb-10 pb-2 justify-center flex-wrap">
-                    {weeklySchedule.map((day, i) => (
+                    {schedule.map((day, i) => (
                       <button
                         key={day.day}
                         onClick={() => onDayClick(i)}
@@ -224,14 +253,14 @@ const YogaPage = () => {
                 </p>
 
                 <div className="yy-events grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                  {yogaEvents.map((event) => (
+                  {events.map((event) => (
                 <div
                   key={event.id}
                   className="yy-eventCard yy-hoverLift rounded-xl border border-border bg-card p-8 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-center gap-2 text-xs text-primary font-medium font-body mb-3">
                     <span className="px-2 py-1 rounded-full bg-primary/10">
-                      {event.date}
+                      {event.dateLabel}
                     </span>
                     <span>{event.price}</span>
                   </div>
@@ -253,7 +282,7 @@ const YogaPage = () => {
                     variant="outline"
                     className="border-primary text-primary hover:bg-primary/5"
                     onClick={() =>
-                      openSignup(event.name, event.date, event.time)
+                      openSignup(event.name, event.dateLabel, event.time)
                     }
                   >
                     Reserve Spot <ArrowRight className="w-4 h-4 ml-1" />

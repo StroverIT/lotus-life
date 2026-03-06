@@ -1,26 +1,27 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Mail, Phone, User } from "lucide-react";
-import { sampleVisits } from "@/data/visits";
-import { sampleUsers } from "@/data/users";
 import { useMemo } from "react";
 
 interface EventAttendeesDialogProps {
   eventName: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  users: Array<{ id: string; name: string; email: string | null; phone: string | null }>;
+  visits: Array<{ id: string; userId: string | null; className: string; type: "CLASS" | "EVENT" }>;
 }
 
-const EventAttendeesDialog = ({ eventName, open, onOpenChange }: EventAttendeesDialogProps) => {
+const EventAttendeesDialog = ({ eventName, open, onOpenChange, users, visits }: EventAttendeesDialogProps) => {
   const attendees = useMemo(() => {
     if (!eventName) return [];
     const userIds = new Set(
-      sampleVisits
-        .filter((v) => v.type === "event" && v.className === eventName)
+      visits
+        .filter((v) => v.type === "EVENT" && v.className === eventName)
         .map((v) => v.userId)
+        .filter(Boolean)
     );
-    return sampleUsers.filter((u) => userIds.has(u.id));
-  }, [eventName]);
+    return users.filter((u) => userIds.has(u.id));
+  }, [eventName, users, visits]);
 
   if (!eventName) return null;
 

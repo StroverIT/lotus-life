@@ -1,6 +1,6 @@
  "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format, parse } from "date-fns";
 import { Sun, Snowflake, Edit, Trash2, Plus, Clock, MapPin, User, Crown, Users, Mail, Phone, Calendar, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -10,11 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "@/context/ThemeContext";
-import { weeklySchedule as initialSchedule, yogaEvents as initialEvents, type YogaClass, type DaySchedule } from "@/data/schedule";
-import { massageTypes as initialMassages, type MassageType } from "@/data/massages";
-import { memberships, type Membership } from "@/data/memberships";
-import { sampleUsers, type UserRecord } from "@/data/users";
-import { sampleVisits } from "@/data/visits";
 import UserDetailDialog from "@/components/admin/UserDetailDialog";
 import EventAttendeesDialog from "@/components/admin/EventAttendeesDialog";
 import EditMassageDialog from "@/components/admin/EditMassageDialog";
@@ -23,43 +18,113 @@ import AddClassDialog from "@/components/admin/AddClassDialog";
 import CreateEventDialog from "@/components/admin/CreateEventDialog";
 import CreateMembershipDialog from "@/components/admin/CreateMembershipDialog";
 import { cn } from "@/lib/utils";
+import type { DaySchedule, Membership, Massage, YogaClass, YogaEvent } from "@/types/catalog";
+import { DEFAULT_MASSAGE_ICON, MASSAGE_ICON_MAP } from "@/lib/massageIconMap";
+
+type AdminUser = {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  membershipId: string | null;
+  joinedAt: string | null;
+  membership?: { id: string; name: string; highlighted: boolean } | null;
+};
+
+type AdminVisit = {
+  id: string;
+  userId: string | null;
+  date: string;
+  className: string;
+  type: "CLASS" | "EVENT";
+  duration: string;
+  hall: string;
+  instructor?: string | null;
+};
 
 const AdminPage = () => {
   const { season, setSeason } = useTheme();
-  const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule);
-  const [events, setEvents] = useState(initialEvents);
-  const [massages, setMassages] = useState<MassageType[]>(initialMassages);
-  const [users] = useState<UserRecord[]>(sampleUsers);
-  const [membershipPlans, setMembershipPlans] = useState<Membership[]>(memberships);
-  const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
+  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
+  const [events, setEvents] = useState<YogaEvent[]>([]);
+  const [massages, setMassages] = useState<Massage[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [visits, setVisits] = useState<AdminVisit[]>([]);
+  const [membershipPlans, setMembershipPlans] = useState<Membership[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedEventName, setSelectedEventName] = useState<string | null>(null);
   const [showAllUsers, setShowAllUsers] = useState(false);
 
   // CRUD modal states
-  const [editingMassage, setEditingMassage] = useState<MassageType | null>(null);
+  const [editingMassage, setEditingMassage] = useState<Massage | null>(null);
   const [showCreateMassage, setShowCreateMassage] = useState(false);
   const [addClassDayIndex, setAddClassDayIndex] = useState<number | null>(null);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showCreateMembership, setShowCreateMembership] = useState(false);
 
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [scheduleRes, eventsRes, massagesRes, membershipsRes, usersRes, visitsRes] = await Promise.all([
+          fetch("/api/schedule"),
+          fetch("/api/events"),
+          fetch("/api/massages"),
+          fetch("/api/memberships"),
+          fetch("/api/admin/users"),
+          fetch("/api/admin/visits"),
+        ]);
+
+        const [scheduleJson, eventsJson, massagesJson, membershipsJson, usersJson, visitsJson] = await Promise.all([
+          scheduleRes.json(),
+          eventsRes.json(),
+          massagesRes.json(),
+          membershipsRes.json(),
+          usersRes.json(),
+          visitsRes.json(),
+        ]);
+
+        if (!alive) return;
+        setSchedule(scheduleJson as DaySchedule[]);
+        setEvents(eventsJson as YogaEvent[]);
+        setMassages(massagesJson as Massage[]);
+        setMembershipPlans(membershipsJson as Membership[]);
+        setUsers(usersJson as AdminUser[]);
+        setVisits(visitsJson as AdminVisit[]);
+      } catch {
+        if (!alive) return;
+        setSchedule([]);
+        setEvents([]);
+        setMassages([]);
+        setMembershipPlans([]);
+        setUsers([]);
+        setVisits([]);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   // Month selector state for users tab
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    sampleVisits.forEach((v) => months.add(v.date.slice(0, 7)));
+    visits.forEach((v) => months.add(v.date.slice(0, 7)));
     return Array.from(months).sort().reverse();
-  }, []);
+  }, [visits]);
   const [userMonthIndex, setUserMonthIndex] = useState(0);
   const currentUserMonth = availableMonths[userMonthIndex] || "";
 
   // Compute attendance stats per user filtered by selected month
   const userStats = useMemo(() => {
     const stats: Record<string, { classes: number; events: number; classMin: number; eventMin: number }> = {};
-    sampleVisits
+    visits
       .filter((v) => v.date.startsWith(currentUserMonth))
       .forEach((v) => {
+        if (!v.userId) return;
         if (!stats[v.userId]) stats[v.userId] = { classes: 0, events: 0, classMin: 0, eventMin: 0 };
         const min = parseInt(v.duration.match(/(\d+)/)?.[1] || "0", 10) * (v.duration.includes("day") ? 480 : 1);
-        if (v.type === "class") {
+        if (v.type === "CLASS") {
           stats[v.userId].classes++;
           stats[v.userId].classMin += min;
         } else {
@@ -68,75 +133,137 @@ const AdminPage = () => {
         }
       });
     return stats;
-  }, [currentUserMonth]);
+  }, [currentUserMonth, visits]);
 
   // Event attendee counts
   const eventAttendeeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    sampleVisits
-      .filter((v) => v.type === "event")
+    visits
+      .filter((v) => v.type === "EVENT")
       .forEach((v) => {
         counts[v.className] = (counts[v.className] || 0) + 1;
       });
     return counts;
-  }, []);
+  }, [visits]);
 
   // Yearly chart data: unique attendees per month
   const monthlyChartData = useMemo(() => {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     return monthNames.map((month, i) => {
       const key = `2026-${String(i + 1).padStart(2, "0")}`;
-      const uniqueUsers = new Set(sampleVisits.filter((v) => v.date.startsWith(key)).map((v) => v.userId));
+      const uniqueUsers = new Set(visits.filter((v) => v.date.startsWith(key)).map((v) => v.userId).filter(Boolean));
       return { month, attendees: uniqueUsers.size };
     });
-  }, []);
+  }, [visits]);
 
   // Users who attended in the selected month
   const monthActiveUserIds = useMemo(() => {
-    return new Set(sampleVisits.filter((v) => v.date.startsWith(currentUserMonth)).map((v) => v.userId));
-  }, [currentUserMonth]);
+    return new Set(visits.filter((v) => v.date.startsWith(currentUserMonth)).map((v) => v.userId).filter(Boolean));
+  }, [currentUserMonth, visits]);
 
   const displayedUsers = useMemo(() => {
     if (showAllUsers) return users;
     return users.filter((u) => monthActiveUserIds.has(u.id));
   }, [showAllUsers, users, monthActiveUserIds]);
 
-  const deleteClass = (dayIndex: number, classId: string) => {
-    setSchedule((prev) =>
-      prev.map((d, i) =>
-        i === dayIndex ? { ...d, classes: d.classes.filter((c) => c.id !== classId) } : d
-      )
-    );
+  const deleteClass = async (dayIndex: number, classId: string) => {
+    try {
+      await fetch(`/api/schedule/classes/${classId}`, { method: "DELETE" });
+    } finally {
+      setSchedule((prev) =>
+        prev.map((d, i) =>
+          i === dayIndex ? { ...d, classes: d.classes.filter((c) => c.id !== classId) } : d
+        )
+      );
+    }
   };
 
-  const deleteEvent = (id: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+  const deleteEvent = async (id: string) => {
+    try {
+      await fetch(`/api/events/${id}`, { method: "DELETE" });
+    } finally {
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    }
   };
 
-  const deleteMassage = (id: string) => {
-    setMassages((prev) => prev.filter((m) => m.id !== id));
+  const deleteMassage = async (id: string) => {
+    try {
+      await fetch(`/api/massages/${id}`, { method: "DELETE" });
+    } finally {
+      setMassages((prev) => prev.filter((m) => m.id !== id));
+    }
   };
 
-  const handleSaveMassage = (updated: MassageType) => {
-    setMassages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+  const deleteMembership = async (id: string) => {
+    try {
+      await fetch(`/api/memberships/${id}`, { method: "DELETE" });
+    } finally {
+      setMembershipPlans((prev) => prev.filter((p) => p.id !== id));
+    }
   };
 
-  const handleCreateMassage = (massage: MassageType) => {
-    setMassages((prev) => [...prev, massage]);
+  const handleSaveMassage = async (updated: Massage) => {
+    try {
+      await fetch(`/api/massages/${updated.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+    } finally {
+      setMassages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+    }
   };
 
-  const handleAddClass = (dayIndex: number, cls: import("@/data/schedule").YogaClass) => {
-    setSchedule((prev) =>
-      prev.map((d, i) => (i === dayIndex ? { ...d, classes: [...d.classes, cls] } : d))
-    );
+  const handleCreateMassage = async (massage: Massage) => {
+    try {
+      await fetch(`/api/massages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(massage),
+      });
+    } finally {
+      setMassages((prev) => [...prev, massage]);
+    }
   };
 
-  const handleCreateEvent = (event: typeof events[0]) => {
-    setEvents((prev) => [...prev, event]);
+  const handleAddClass = async (dayIndex: number, cls: YogaClass) => {
+    const day = schedule[dayIndex]?.day;
+    if (!day) return;
+    try {
+      await fetch(`/api/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ day, cls }),
+      });
+    } finally {
+      setSchedule((prev) =>
+        prev.map((d, i) => (i === dayIndex ? { ...d, classes: [...d.classes, cls] } : d))
+      );
+    }
   };
 
-  const handleCreateMembership = (plan: Membership) => {
-    setMembershipPlans((prev) => [...prev, plan]);
+  const handleCreateEvent = async (event: YogaEvent) => {
+    try {
+      await fetch(`/api/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(event),
+      });
+    } finally {
+      setEvents((prev) => [...prev, event]);
+    }
+  };
+
+  const handleCreateMembership = async (plan: Membership) => {
+    try {
+      await fetch(`/api/memberships`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(plan),
+      });
+    } finally {
+      setMembershipPlans((prev) => [...prev, plan]);
+    }
   };
 
   return (
@@ -234,7 +361,7 @@ const AdminPage = () => {
                         <h4 className="font-display text-xl mb-1">{event.name}</h4>
                         <p className="text-muted-foreground text-sm font-body mb-2">{event.description}</p>
                         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-body">
-                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{event.date} · {event.time}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{event.dateLabel} · {event.time}</span>
                           <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" />{event.hall}</span>
                           <span className="text-primary font-medium">{event.price}</span>
                         </div>
@@ -285,7 +412,10 @@ const AdminPage = () => {
                   <div key={m.id} className="rounded-xl border border-border bg-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">
                       <div className="w-10 h-10 rounded-full gradient-purple flex items-center justify-center shrink-0">
-                        <m.icon className="w-5 h-5 text-primary-foreground" />
+                        {(() => {
+                          const Icon = MASSAGE_ICON_MAP[m.iconKey] ?? DEFAULT_MASSAGE_ICON;
+                          return <Icon className="w-5 h-5 text-primary-foreground" />;
+                        })()}
                       </div>
                       <div>
                         <h4 className="font-display text-xl mb-1">{m.name}</h4>
@@ -357,7 +487,7 @@ const AdminPage = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setMembershipPlans((prev) => prev.filter((p) => p.id !== plan.id))}
+                        onClick={() => deleteMembership(plan.id)}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -446,7 +576,7 @@ const AdminPage = () => {
                 </TableHeader>
                 <TableBody>
                   {displayedUsers.map((user) => {
-                    const plan = memberships.find((m) => m.id === user.membershipId);
+                    const plan = membershipPlans.find((m) => m.id === user.membershipId);
                     return (
                       <TableRow key={user.id}>
                         <TableCell>
@@ -493,7 +623,13 @@ const AdminPage = () => {
               {displayedUsers.length === 0 && (
                 <p className="text-muted-foreground text-sm font-body text-center py-6">No users attended this month</p>
               )}
-              <UserDetailDialog user={selectedUser} open={!!selectedUser} onOpenChange={(o) => !o && setSelectedUser(null)} />
+              <UserDetailDialog
+                user={selectedUser}
+                open={!!selectedUser}
+                onOpenChange={(o) => !o && setSelectedUser(null)}
+                visits={visits}
+                plans={membershipPlans}
+              />
              </TabsContent>
 
             {/* Theme */}
@@ -533,7 +669,13 @@ const AdminPage = () => {
               </div>
             </TabsContent>
           </Tabs>
-          <EventAttendeesDialog eventName={selectedEventName} open={!!selectedEventName} onOpenChange={(o) => !o && setSelectedEventName(null)} />
+          <EventAttendeesDialog
+            eventName={selectedEventName}
+            open={!!selectedEventName}
+            onOpenChange={(o) => !o && setSelectedEventName(null)}
+            users={users}
+            visits={visits}
+          />
           <EditMassageDialog massage={editingMassage} open={!!editingMassage} onOpenChange={(o) => !o && setEditingMassage(null)} onSave={handleSaveMassage} />
           <CreateMassageDialog open={showCreateMassage} onOpenChange={setShowCreateMassage} onSave={handleCreateMassage} />
           <AddClassDialog open={addClassDayIndex !== null} dayName={addClassDayIndex !== null ? schedule[addClassDayIndex]?.day || "" : ""} onOpenChange={(o) => !o && setAddClassDayIndex(null)} onSave={(cls) => { if (addClassDayIndex !== null) handleAddClass(addClassDayIndex, cls); }} />

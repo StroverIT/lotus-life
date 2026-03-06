@@ -7,23 +7,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { sampleVisits, Visit } from "@/data/visits";
-import { memberships } from "@/data/memberships";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { fadeInUp } from "@/lib/animations";
+import type { Membership } from "@/types/catalog";
 
-// Simulated current membership (null = no membership)
-const currentMembershipId: string | null = "essence";
+type AccountVisit = {
+  id: string;
+  date: string;
+  className: string;
+  type: "CLASS" | "EVENT";
+  duration: string;
+  hall: string;
+  instructor?: string | null;
+};
+
+type AccountResponse =
+  | { kind: "guest"; membership: null; visits: AccountVisit[] }
+  | {
+      kind: "user";
+      user: { id: string; name: string; email: string | null } | null;
+      membership: Membership | null;
+      visits: AccountVisit[];
+    };
 
 function parseDuration(duration: string): number {
   const match = duration.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
 }
 
-function groupByMonth(visits: Visit[]): Record<string, Visit[]> {
-  const groups: Record<string, Visit[]> = {};
+function groupByMonth(visits: AccountVisit[]): Record<string, AccountVisit[]> {
+  const groups: Record<string, AccountVisit[]> = {};
   for (const v of visits) {
     const d = new Date(v.date);
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -44,16 +59,13 @@ function formatDate(iso: string): string {
 }
 
 const UserPanel = () => {
-  const [guest, setGuest] = useState<{ name?: string; email?: string } | null>(null);
+  const [account, setAccount] = useState<AccountResponse | null>(null);
+  const [plans, setPlans] = useState<Membership[]>([]);
 
   const headerRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const guestRaw = window.localStorage.getItem("lotus-life-guest");
-      setGuest(guestRaw ? JSON.parse(guestRaw) : null);
-    }
     fadeInUp(
       headerRef.current,
       {
@@ -65,14 +77,35 @@ const UserPanel = () => {
   }, [prefersReducedMotion]);
 
   const grouped = useMemo(() => {
-    const g = groupByMonth(sampleVisits);
+    const g = groupByMonth(account?.visits ?? []);
     // Sort months descending
     return Object.entries(g).sort(([a], [b]) => b.localeCompare(a));
+  }, [account]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [accountRes, plansRes] = await Promise.all([fetch("/api/account"), fetch("/api/memberships")]);
+        const [accountJson, plansJson] = await Promise.all([accountRes.json(), plansRes.json()]);
+        if (!alive) return;
+        setAccount(accountJson as AccountResponse);
+        setPlans(plansJson as Membership[]);
+      } catch {
+        if (!alive) return;
+        setAccount({ kind: "guest", membership: null, visits: [] });
+        setPlans([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const currentPlan = memberships.find((m) => m.id === currentMembershipId) || null;
-  const currentIdx = currentPlan ? memberships.findIndex((m) => m.id === currentPlan.id) : -1;
-  const upgradePlan = currentIdx >= 0 && currentIdx < memberships.length - 1 ? memberships[currentIdx + 1] : null;
+  const currentMembershipId = account?.kind === "user" ? account.membership?.id ?? null : null;
+  const currentPlan = plans.find((m) => m.id === currentMembershipId) || null;
+  const currentIdx = currentPlan ? plans.findIndex((m) => m.id === currentPlan.id) : -1;
+  const upgradePlan = currentIdx >= 0 && currentIdx < plans.length - 1 ? plans[currentIdx + 1] : null;
 
   return (
     <Layout>
@@ -85,10 +118,10 @@ const UserPanel = () => {
             <UserIcon className="w-9 h-9 text-primary-foreground" />
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-light text-foreground mb-2">
-            {guest ? guest.name : "My Account"}
+            {account?.kind === "user" ? account.user?.name ?? "My Account" : "Guest Account"}
           </h1>
-          {guest && (
-            <p className="text-muted-foreground font-body text-sm">{guest.email}</p>
+          {account?.kind === "user" && account.user?.email && (
+            <p className="text-muted-foreground font-body text-sm">{account.user.email}</p>
           )}
         </div>
       </section>
@@ -134,10 +167,10 @@ const UserPanel = () => {
                               <div className="flex items-center gap-2 mb-1">
                                 <h4 className="font-display text-lg text-foreground truncate">{v.className}</h4>
                                 <Badge
-                                  variant={v.type === "event" ? "default" : "secondary"}
+                                  variant={v.type === "EVENT" ? "default" : "secondary"}
                                   className={cn(
                                     "text-[10px] uppercase tracking-wider shrink-0",
-                                    v.type === "event" && "gradient-purple text-primary-foreground border-0"
+                                    v.type === "EVENT" && "gradient-purple text-primary-foreground border-0"
                                   )}
                                 >
                                   {v.type}
@@ -240,7 +273,7 @@ const UserPanel = () => {
               <Separator className="my-8" />
               <h3 className="font-display text-2xl mb-6">All Plans</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {memberships.map((plan) => {
+                {plans.map((plan) => {
                   const isActive = plan.id === currentMembershipId;
                   return (
                     <div
@@ -278,7 +311,7 @@ const UserPanel = () => {
                         </Button>
                       ) : (
                         <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                          <Link href="/contact">Choose Plan</Link>
+                          <Link href="/memberships">Choose Plan</Link>
                         </Button>
                       )}
                     </div>

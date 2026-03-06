@@ -5,14 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { type UserRecord } from "@/data/users";
-import { type Visit, sampleVisits } from "@/data/visits";
-import { memberships } from "@/data/memberships";
+import type { Membership } from "@/types/catalog";
 
 interface UserDetailDialogProps {
-  user: UserRecord | null;
+  user: { id: string; name: string; email: string | null; phone: string | null; membershipId: string | null; joinedAt: string | null } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  visits: Array<{ id: string; userId: string | null; date: string; className: string; type: "CLASS" | "EVENT"; duration: string; hall: string }>;
+  plans: Membership[];
 }
 
 function parseDuration(duration: string): number {
@@ -23,7 +23,7 @@ function parseDuration(duration: string): number {
   return 0;
 }
 
-function getAvailableMonths(visits: Visit[]): string[] {
+function getAvailableMonths(visits: Array<{ date: string }>): string[] {
   const months = new Set<string>();
   visits.forEach((v) => months.add(v.date.slice(0, 7)));
   return Array.from(months).sort().reverse();
@@ -34,12 +34,12 @@ function formatMonthLabel(key: string): string {
   return format(d, "MMMM yyyy");
 }
 
-const UserDetailDialog = ({ user, open, onOpenChange }: UserDetailDialogProps) => {
+const UserDetailDialog = ({ user, open, onOpenChange, visits, plans }: UserDetailDialogProps) => {
   const [monthIndex, setMonthIndex] = useState(0);
 
   const userVisits = useMemo(
-    () => (user ? sampleVisits.filter((v) => v.userId === user.id) : []),
-    [user]
+    () => (user ? visits.filter((v) => v.userId === user.id) : []),
+    [user, visits]
   );
 
   const availableMonths = useMemo(() => getAvailableMonths(userVisits), [userVisits]);
@@ -50,18 +50,18 @@ const UserDetailDialog = ({ user, open, onOpenChange }: UserDetailDialogProps) =
     [userVisits, currentMonthKey]
   );
 
-  const classVisits = monthVisits.filter((v) => v.type === "class");
-  const eventVisits = monthVisits.filter((v) => v.type === "event");
+  const classVisits = monthVisits.filter((v) => v.type === "CLASS");
+  const eventVisits = monthVisits.filter((v) => v.type === "EVENT");
   const totalClassMinutes = classVisits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
   const totalEventMinutes = eventVisits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
 
   // Totals across all time
-  const allClassVisits = userVisits.filter((v) => v.type === "class");
-  const allEventVisits = userVisits.filter((v) => v.type === "event");
+  const allClassVisits = userVisits.filter((v) => v.type === "CLASS");
+  const allEventVisits = userVisits.filter((v) => v.type === "EVENT");
   const totalAllClassMin = allClassVisits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
   const totalAllEventMin = allEventVisits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
 
-  const plan = user ? memberships.find((m) => m.id === user.membershipId) : null;
+  const plan = user ? plans.find((m) => m.id === user.membershipId) : null;
 
   if (!user) return null;
 
@@ -93,7 +93,7 @@ const UserDetailDialog = ({ user, open, onOpenChange }: UserDetailDialogProps) =
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Joined</p>
-            <p>{user.joinedAt}</p>
+            <p>{user.joinedAt ?? "—"}</p>
           </div>
         </div>
 
@@ -180,7 +180,7 @@ const UserDetailDialog = ({ user, open, onOpenChange }: UserDetailDialogProps) =
                   <TableCell className="font-body text-sm">{format(new Date(visit.date), "MMM d")}</TableCell>
                   <TableCell className="font-display">{visit.className}</TableCell>
                   <TableCell>
-                    <Badge variant={visit.type === "event" ? "default" : "secondary"} className="text-xs">
+                    <Badge variant={visit.type === "EVENT" ? "default" : "secondary"} className="text-xs">
                       {visit.type}
                     </Badge>
                   </TableCell>

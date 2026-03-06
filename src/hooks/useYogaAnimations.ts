@@ -5,6 +5,13 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
+declare global {
+  interface Window {
+    __yyAnimateDayChange?: () => Promise<void> | void;
+    __yyPopActiveDay?: () => void;
+  }
+}
+
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
@@ -116,7 +123,7 @@ export function useYogaAnimations(enabled = true) {
       // Day tab click animation: animate current cards OUT only.
       // The page click handler is responsible for updating state and animating new cards IN.
       // -----------------------------
-      (window as any).__yyAnimateDayChange = async () => {
+      window.__yyAnimateDayChange = async () => {
         const cards = gsap.utils.toArray<HTMLElement>(".yy-classCard");
         if (!cards.length) return;
 
@@ -130,7 +137,7 @@ export function useYogaAnimations(enabled = true) {
       };
 
       // Nice active-day nudge
-      (window as any).__yyPopActiveDay = () => {
+      window.__yyPopActiveDay = () => {
         const active = document.querySelector(
           ".yy-day.is-active",
         ) as HTMLElement | null;

@@ -8,12 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 interface CreateEventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (event: { id: string; name: string; date: string; time: string; duration: string; hall: string; price: string; description: string }) => void;
+  onSave: (event: { id: string; name: string; dateLabel: string; time: string; duration: string; hall: string; price: string; description: string }) => void;
 }
 
 const CreateEventDialog = ({ open, onOpenChange, onSave }: CreateEventDialogProps) => {
   const [name, setName] = useState("");
-  const [date, setDate] = useState("");
+  const [dateLabel, setDateLabel] = useState("");
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("");
   const [hall, setHall] = useState("");
@@ -21,11 +21,11 @@ const CreateEventDialog = ({ open, onOpenChange, onSave }: CreateEventDialogProp
   const [description, setDescription] = useState("");
 
   const reset = () => {
-    setName(""); setDate(""); setTime(""); setDuration(""); setHall(""); setPrice(""); setDescription("");
+    setName(""); setDateLabel(""); setTime(""); setDuration(""); setHall(""); setPrice(""); setDescription("");
   };
 
   const handleSave = () => {
-    onSave({ id: crypto.randomUUID(), name, date, time, duration, hall, price, description });
+    onSave({ id: crypto.randomUUID(), name, dateLabel, time, duration, hall, price, description });
     reset();
     onOpenChange(false);
   };
@@ -44,7 +44,7 @@ const CreateEventDialog = ({ open, onOpenChange, onSave }: CreateEventDialogProp
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Date</Label>
-              <Input value={date} onChange={(e) => setDate(e.target.value)} placeholder="March 14, 2026" />
+              <Input value={dateLabel} onChange={(e) => setDateLabel(e.target.value)} placeholder="March 14, 2026" />
             </div>
             <div>
               <Label>Time</Label>
@@ -72,7 +72,7 @@ const CreateEventDialog = ({ open, onOpenChange, onSave }: CreateEventDialogProp
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!name.trim() || !date.trim()}>Create Event</Button>
+          <Button onClick={handleSave} disabled={!name.trim() || !dateLabel.trim()}>Create Event</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

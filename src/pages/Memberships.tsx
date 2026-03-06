@@ -2,19 +2,26 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, Star } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { memberships, singleClassPrice } from "@/data/memberships";
 import { cn } from "@/lib/utils";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMembershipsAnimations } from "@/hooks/useMembershipsAnimations";
+import type { Membership } from "@/types/catalog";
 
 const WHATSAPP_URL = "https://wa.me/359883317785";
+const singleClassPrice = "€10";
 
 const MembershipsPage = () => {
+  const router = useRouter();
   const [contentLoaded, setContentLoaded] = useState(false);
+  const [plans, setPlans] = useState<Membership[]>([]);
+  const [me, setMe] = useState<{ kind: "none" | "guest" | "user"; role?: "USER" | "ADMIN" }>({
+    kind: "none",
+  });
 
   const shouldAnimate = usePageFirstVisit("memberships");
   const scope = useMembershipsAnimations(shouldAnimate);
@@ -23,6 +30,41 @@ const MembershipsPage = () => {
     const t = setTimeout(() => setContentLoaded(true), 400);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [plansRes, meRes] = await Promise.all([fetch("/api/memberships"), fetch("/api/me")]);
+        const [plansJson, meJson] = await Promise.all([plansRes.json(), meRes.json()]);
+        if (!alive) return;
+        setPlans(plansJson as Membership[]);
+        if (!meJson?.user) setMe({ kind: "none" });
+        else if (meJson.user.kind === "guest") setMe({ kind: "guest" });
+        else if (meJson.user.kind === "user") setMe({ kind: "user", role: meJson.user.role });
+      } catch {
+        if (!alive) return;
+        setPlans([]);
+        setMe({ kind: "none" });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const startMembership = (plan: Membership) => {
+    if (me.kind !== "user") {
+      const redirect = `/memberships?plan=${encodeURIComponent(plan.id)}`;
+      router.push(`/login?redirect=${encodeURIComponent(redirect)}`);
+      return;
+    }
+    window.open(
+      `${WHATSAPP_URL}?text=${encodeURIComponent(`Hi! I'm interested in the ${plan.name} membership`)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
 
   return (
     <Layout>
@@ -47,15 +89,16 @@ const MembershipsPage = () => {
             </p>
             <Button
               className="pp-bookNowTop mt-6 gradient-purple text-primary-foreground border-0 hover:opacity-90"
-              asChild
+              onClick={() => {
+                if (me.kind !== "user") return router.push(`/login?redirect=${encodeURIComponent("/memberships")}`);
+                window.open(
+                  `${WHATSAPP_URL}?text=${encodeURIComponent("Hi! I'd love to discuss memberships")}`,
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
             >
-              <a
-                href={`${WHATSAPP_URL}?text=Hi! I'd love to discuss memberships`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Book Now
-              </a>
+              Book Now
             </Button>
           </div>
         </section>
@@ -63,7 +106,7 @@ const MembershipsPage = () => {
         {/* Pricing */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            {!contentLoaded ? (
+            {!contentLoaded || plans.length === 0 ? (
               <>
                 <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -79,98 +122,93 @@ const MembershipsPage = () => {
             ) : (
               <>
                 <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                  {memberships.map((plan) => {
-                const currency = plan.price.replace(/\d/g, "").trim() || "€";
-                const amount = Number(
-                  plan.price.replace(/[^\d]/g, ""),
-                );
+                  {plans.map((plan) => {
+                    const currency = plan.price.replace(/\d/g, "").trim() || "€";
+                    const amount = Number(
+                      plan.price.replace(/[^\d]/g, ""),
+                    );
 
-                return (
-                  <div
-                    key={plan.id}
-                    className={cn(
-                      "pp-card relative rounded-2xl p-8 flex flex-col",
-                      plan.highlighted
-                        ? "is-popular gradient-purple text-primary-foreground shadow-2xl shadow-primary/20 scale-[1.02]"
-                        : "border border-border bg-card",
-                    )}
-                  >
-                    {plan.badge && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="pp-badge flex items-center gap-1 px-4 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold font-body">
-                          <Star className="w-3 h-3" /> {plan.badge}
-                        </span>
-                      </div>
-                    )}
-
-                    <h3 className="pp-planName font-display text-2xl mb-2">
-                      {plan.name}
-                    </h3>
-                    <div className="mb-6">
-                      <span className="font-display text-4xl font-semibold">
-                        {currency}
-                        <span className="pp-priceNum ml-1">
-                          {Number.isNaN(amount) ? plan.price : amount}
-                        </span>
-                      </span>
-                      <span
+                    return (
+                      <div
+                        key={plan.id}
                         className={cn(
-                          "pp-priceUnit text-sm font-body ml-1",
+                          "pp-card relative rounded-2xl p-8 flex flex-col",
                           plan.highlighted
-                            ? "text-primary-foreground/70"
-                            : "text-muted-foreground",
+                            ? "is-popular gradient-purple text-primary-foreground shadow-2xl shadow-primary/20 scale-[1.02]"
+                            : "border border-border bg-card",
                         )}
                       >
-                        {plan.period}
-                      </span>
-                    </div>
+                        {plan.badge && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <span className="pp-badge flex items-center gap-1 px-4 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold font-body">
+                              <Star className="w-3 h-3" /> {plan.badge}
+                            </span>
+                          </div>
+                        )}
 
-                    <ul className="flex-1 space-y-3 mb-8">
-                      {plan.features.map((f) => (
-                        <li
-                          key={f}
-                          className="pp-perk flex items-start gap-2 text-sm font-body"
-                        >
-                          <Check
-                            className={cn(
-                              "w-4 h-4 shrink-0 mt-0.5",
-                              plan.highlighted ? "text-accent" : "text-primary",
-                            )}
-                          />
-                          <span
-                            className={
-                              plan.highlighted
-                                ? "text-primary-foreground/80"
-                                : "text-muted-foreground"
-                            }
-                          >
-                            {f}
+                        <h3 className="pp-planName font-display text-2xl mb-2">
+                          {plan.name}
+                        </h3>
+                        <div className="mb-6">
+                          <span className="font-display text-4xl font-semibold">
+                            {currency}
+                            <span className="pp-priceNum ml-1">
+                              {Number.isNaN(amount) ? plan.price : amount}
+                            </span>
                           </span>
-                        </li>
-                      ))}
-                    </ul>
+                          <span
+                            className={cn(
+                              "pp-priceUnit text-sm font-body ml-1",
+                              plan.highlighted
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground",
+                            )}
+                          >
+                            {plan.period}
+                          </span>
+                        </div>
 
-                    <Button
-                      asChild
-                      className={cn(
-                        "pp-cta w-full",
-                        plan.highlighted
-                          ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-                          : "gradient-purple text-primary-foreground border-0 hover:opacity-90",
-                      )}
-                    >
-                      <a
-                        href={`${WHATSAPP_URL}?text=Hi! I'm interested in the ${plan.name} membership`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Get Started
-                      </a>
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
+                        <ul className="flex-1 space-y-3 mb-8">
+                          {plan.features.map((f) => (
+                            <li
+                              key={f}
+                              className="pp-perk flex items-start gap-2 text-sm font-body"
+                            >
+                              <Check
+                                className={cn(
+                                  "w-4 h-4 shrink-0 mt-0.5",
+                                  plan.highlighted ? "text-accent" : "text-primary",
+                                )}
+                              />
+                              <span
+                                className={
+                                  plan.highlighted
+                                    ? "text-primary-foreground/80"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {f}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <Button
+                      type="button"
+                      onClick={() => startMembership(plan)}
+                          className={cn(
+                            "pp-cta w-full",
+                            plan.highlighted
+                              ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                              : "gradient-purple text-primary-foreground border-0 hover:opacity-90",
+                          )}
+                        >
+                      Get Started
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
 
                 <div className="pp-dropin text-center mt-12 p-8 rounded-xl bg-secondary max-w-md mx-auto">
                   <p className="font-display text-xl mb-1">Drop-in Class</p>

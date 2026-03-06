@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { MassageType } from "@/data/massages";
+import type { Massage } from "@/types/catalog";
 
 interface EditMassageDialogProps {
-  massage: MassageType | null;
+  massage: Massage | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (updated: MassageType) => void;
+  onSave: (updated: Massage) => void;
 }
 
 const EditMassageDialog = ({ massage, open, onOpenChange, onSave }: EditMassageDialogProps) => {

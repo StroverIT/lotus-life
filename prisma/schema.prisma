@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuthType {
+  CREDENTIALS
+  GOOGLE
+  FACEBOOK
+  GUEST
+}
+
+enum VisitType {
+  CLASS
+  EVENT
+}
+
+enum Season {
+  summer
+  winter
+}
+
+model Membership {
+  id          String  @id
+  name        String
+  price       String
+  period      String
+  features    Json
+  highlighted Boolean @default(false)
+  badge       String?
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id             String    @id @default(cuid())
+  supabaseAuthId String?   @unique
+  email          String?   @unique
+  name           String
+  phone          String?
+  role           UserRole  @default(USER)
+  authType       AuthType
+
+  membershipId String?
+  membership   Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+
+  joinedAt    DateTime?
+  totalVisits Int      @default(0)
+  lastVisit   DateTime?
+
+  visits Visit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DaySchedule {
+  id  String @id @default(cuid())
+  day String @unique
+
+  classes YogaClass[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model YogaClass {
+  id          String @id
+  name        String
+  time        String
+  duration    String
+  hall        String
+  instructor  String
+  description String
+
+  dayScheduleId String
+  daySchedule   DaySchedule @relation(fields: [dayScheduleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model YogaEvent {
+  id          String @id
+  name        String
+  dateLabel   String
+  time        String
+  duration    String
+  hall        String
+  price       String
+  description String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Massage {
+  id            String @id
+  name          String
+  iconKey       String
+  price30       String
+  price60       String
+  description   String
+  benefits      Json
+  availableDays Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Visit {
+  id         String    @id
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  date       DateTime
+  className  String
+  type       VisitType
+  duration   String
+  hall       String
+  instructor String?
+
+  guestName  String?
+  guestEmail String?
+  guestPhone String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SiteSettings {
+  id            Int    @id @default(autoincrement())
+  defaultSeason Season @default(summer)
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}

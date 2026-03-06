@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Hand, Layers, Droplets, Flame, Move, Sparkles, type LucideIcon } from "lucide-react";
-import type { MassageType } from "@/data/massages";
+import type { Massage } from "@/types/catalog";
 
 const ICON_OPTIONS: { label: string; value: string; icon: LucideIcon }[] = [
   { label: "Hand", value: "Hand", icon: Hand },
@@ -17,12 +17,10 @@ const ICON_OPTIONS: { label: string; value: string; icon: LucideIcon }[] = [
   { label: "Sparkles", value: "Sparkles", icon: Sparkles },
 ];
 
-const iconMap: Record<string, LucideIcon> = { Hand, Layers, Droplets, Flame, Move, Sparkles };
-
 interface CreateMassageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (massage: MassageType) => void;
+  onSave: (massage: Massage) => void;
 }
 
 const CreateMassageDialog = ({ open, onOpenChange, onSave }: CreateMassageDialogProps) => {
@@ -43,7 +41,7 @@ const CreateMassageDialog = ({ open, onOpenChange, onSave }: CreateMassageDialog
       description,
       price30,
       price60,
-      icon: iconMap[iconKey] || Hand,
+      iconKey,
       benefits: [],
       availableDays: ["Monday", "Thursday", "Friday"],
     });

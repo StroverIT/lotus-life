@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, Phone, Leaf, Heart, User } from "lucide-react";
+import { Menu, X, Leaf, Heart, User, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import LotusLogo from "./svg/LotusLogo";
@@ -17,6 +17,7 @@ import {
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { staggerChildren } from "@/lib/animations";
 import { useBookNowPulse } from "@/hooks/useBookNowPulse";
+import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const navLinks = [
   { label: "Home", to: "/" },
@@ -30,6 +31,11 @@ const navLinks = [
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
+  const [me, setMe] = useState<
+    | { kind: "none" }
+    | { kind: "guest"; supabaseId: string }
+    | { kind: "user"; supabaseId: string; role: "USER" | "ADMIN"; name?: string | null }
+  >({ kind: "none" });
   const pathname = usePathname();
   const router = useRouter();
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -49,10 +55,47 @@ const Navbar = () => {
     );
   }, [prefersReducedMotion]);
 
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+
+    const refresh = async () => {
+      try {
+        const res = await fetch("/api/me");
+        const json = await res.json();
+        if (!json?.user) return setMe({ kind: "none" });
+        if (json.user.kind === "guest") return setMe({ kind: "guest", supabaseId: json.user.supabaseId });
+        if (json.user.kind === "user") {
+          return setMe({
+            kind: "user",
+            supabaseId: json.user.supabaseId,
+            role: json.user.role,
+            name: json.user.name ?? null,
+          });
+        }
+        setMe({ kind: "none" });
+      } catch {
+        setMe({ kind: "none" });
+      }
+    };
+
+    refresh();
+    const { data } = supabase.auth.onAuthStateChange(() => refresh());
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
   const handleBookChoice = (path: string) => {
     setBookOpen(false);
     setIsOpen(false);
     router.push(path);
+  };
+
+  const handleLogout = async () => {
+    const supabase = getSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    setMe({ kind: "none" });
+    router.push("/");
   };
 
   return (
@@ -88,19 +131,35 @@ const Navbar = () => {
 
             {/* CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <a
-                href="tel:+359883317785"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Phone className="w-4 h-4" />
-                +359 883 317 785
-              </a>
-              <Link
-                href="/my-account"
-                className="p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all"
-              >
-                <User className="w-5 h-5" />
-              </Link>
+              {me.kind === "user" && me.role === "ADMIN" && (
+                <Link
+                  href="/admin"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-2"
+                >
+                  <Shield className="w-4 h-4" />
+                  Admin
+                </Link>
+              )}
+
+              {me.kind === "none" ? (
+                <Link href="/login">
+                  <Button variant="outline">Login</Button>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/my-account"
+                    className="p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all"
+                    aria-label="My account"
+                  >
+                    <User className="w-5 h-5" />
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
+                    <LogOut className="w-5 h-5" />
+                  </Button>
+                </>
+              )}
+
               <Button
                 className="ll-bookNow gradient-purple text-primary-foreground border-0 hover:opacity-90"
                 onClick={() => setBookOpen(true)}
@@ -139,13 +198,38 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="mt-2 pt-2 border-t border-border">
-                <a
-                  href="tel:+359883317785"
-                  className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground"
-                >
-                  <Phone className="w-4 h-4" />
-                  +359 883 317 785
-                </a>
+                {me.kind === "user" && me.role === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <Shield className="w-4 h-4" />
+                    Admin Panel
+                  </Link>
+                )}
+
+                {me.kind === "none" ? (
+                  <Link
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Login
+                  </Link>
+                ) : (
+                  <div className="flex gap-2 px-4 py-2">
+                    <Link href="/my-account" onClick={() => setIsOpen(false)} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        My account
+                      </Button>
+                    </Link>
+                    <Button variant="outline" onClick={handleLogout} className="shrink-0">
+                      <LogOut className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
                 <Button
                   className="ll-bookNow w-full mt-2 gradient-purple text-primary-foreground border-0"
                   onClick={() => setBookOpen(true)}

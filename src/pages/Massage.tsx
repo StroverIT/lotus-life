@@ -2,17 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Clock, Check, ArrowRight } from "lucide-react";
+import { Clock, Check, ArrowRight, type LucideIcon } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { massageTypes, type MassageType } from "@/data/massages";
 import MassageBookingDialog from "@/components/MassageBookingDialog";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMassageAnimations } from "@/hooks/useMassageAnimations";
+import type { Massage } from "@/types/catalog";
+import { DEFAULT_MASSAGE_ICON, MASSAGE_ICON_MAP } from "@/lib/massageIconMap";
 
 const MassagePage = () => {
-  const [selectedMassage, setSelectedMassage] = useState<MassageType | null>(null);
+  const [massages, setMassages] = useState<Array<Massage & { icon: LucideIcon }>>([]);
+  const [selectedMassage, setSelectedMassage] = useState<Massage | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [contentLoaded, setContentLoaded] = useState(false);
 
@@ -24,7 +26,30 @@ const MassagePage = () => {
     return () => clearTimeout(t);
   }, []);
 
-  const handleBook = (massage: MassageType) => {
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/massages");
+        const data = (await res.json()) as Massage[];
+        if (!alive) return;
+        setMassages(
+          data.map((m) => ({
+            ...m,
+            icon: MASSAGE_ICON_MAP[m.iconKey] ?? DEFAULT_MASSAGE_ICON,
+          })),
+        );
+      } catch {
+        if (!alive) return;
+        setMassages([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const handleBook = (massage: Massage) => {
     setSelectedMassage(massage);
     setDialogOpen(true);
   };
@@ -67,7 +92,7 @@ const MassagePage = () => {
         {/* Treatments */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            {!contentLoaded ? (
+            {!contentLoaded || massages.length === 0 ? (
               <>
                 <Skeleton className="h-10 w-48 mx-auto mb-4" />
                 <Skeleton className="h-4 w-96 mx-auto mb-14" />
@@ -92,7 +117,7 @@ const MassagePage = () => {
                 </p>
 
                 <div className="mm-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                  {massageTypes.map((massage) => (
+                  {massages.map((massage) => (
                 <div
                   key={massage.id}
                   className="mm-card mm-hoverLift group rounded-xl border border-border bg-card p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all flex flex-col"
