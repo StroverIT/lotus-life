@@ -12,6 +12,7 @@ import Link from "next/link";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { fadeInUp } from "@/lib/animations";
 import type { Membership } from "@/types/catalog";
+import { useSession } from "next-auth/react";
 
 type AccountVisit = {
   id: string;
@@ -27,7 +28,7 @@ type AccountResponse =
   | { kind: "guest"; membership: null; visits: AccountVisit[] }
   | {
       kind: "user";
-      user: { id: string; name: string; email: string | null } | null;
+      user: { id: string; name: string; email: string | null; image?: string | null } | null;
       membership: Membership | null;
       visits: AccountVisit[];
     };
@@ -61,6 +62,7 @@ function formatDate(iso: string): string {
 const UserPanel = () => {
   const [account, setAccount] = useState<AccountResponse | null>(null);
   const [plans, setPlans] = useState<Membership[]>([]);
+  const { data: session } = useSession();
 
   const headerRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -107,6 +109,17 @@ const UserPanel = () => {
   const currentIdx = currentPlan ? plans.findIndex((m) => m.id === currentPlan.id) : -1;
   const upgradePlan = currentIdx >= 0 && currentIdx < plans.length - 1 ? plans[currentIdx + 1] : null;
 
+  const sessionUser = session?.user;
+  const displayName =
+    (sessionUser?.name as string | undefined | null) ??
+    (account?.kind === "user" ? account.user?.name ?? null : null);
+  const displayEmail =
+    (sessionUser?.email as string | undefined | null) ??
+    (account?.kind === "user" ? account.user?.email ?? null : null);
+  const displayImage =
+    (sessionUser?.image as string | undefined | null) ??
+    (account?.kind === "user" ? account.user?.image ?? null : null);
+
   return (
     <Layout>
       {/* Header */}
@@ -114,15 +127,23 @@ const UserPanel = () => {
         <div className="absolute inset-0 bg-secondary" />
         <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-accent/20 blur-3xl" />
         <div ref={headerRef} className="relative z-10 container mx-auto px-4 text-center">
-          <div className="w-20 h-20 rounded-full gradient-purple flex items-center justify-center mx-auto mb-6">
-            <UserIcon className="w-9 h-9 text-primary-foreground" />
+          <div className="w-20 h-20 rounded-full gradient-purple flex items-center justify-center mx-auto mb-6 overflow-hidden">
+            {displayImage ? (
+              // User avatar when available
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={displayImage}
+                alt={displayName ?? "Profile picture"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <UserIcon className="w-9 h-9 text-primary-foreground" />
+            )}
           </div>
           <h1 className="font-display text-4xl md:text-5xl font-light text-foreground mb-2">
-            {account?.kind === "user" ? account.user?.name ?? "My Account" : "Guest Account"}
+            {displayName ? `Welcome, ${displayName}!` : "Welcome!"}
           </h1>
-          {account?.kind === "user" && account.user?.email && (
-            <p className="text-muted-foreground font-body text-sm">{account.user.email}</p>
-          )}
+          {displayEmail && <p className="text-muted-foreground font-body text-sm">{displayEmail}</p>}
         </div>
       </section>
 
@@ -136,74 +157,83 @@ const UserPanel = () => {
 
             {/* ===== VISITS TAB ===== */}
             <TabsContent value="visits">
-              {grouped.map(([monthKey, visits]) => {
-                const totalMin = visits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
-                const hours = Math.floor(totalMin / 60);
-                const mins = totalMin % 60;
-                return (
-                  <div key={monthKey} className="mb-10">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-display text-2xl text-foreground">{formatMonthLabel(monthKey)}</h3>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground font-body">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {visits.length} visits
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {hours > 0 ? `${hours}h ` : ""}{mins > 0 ? `${mins}m` : ""}
-                        </span>
+              {account && (account.visits?.length ?? 0) === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground font-body mb-2">You don't have any visits yet.</p>
+                  <p className="text-sm text-muted-foreground font-body">
+                    Book your first class or event to see it appear here.
+                  </p>
+                </div>
+              ) : (
+                grouped.map(([monthKey, visits]) => {
+                  const totalMin = visits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
+                  const hours = Math.floor(totalMin / 60);
+                  const mins = totalMin % 60;
+                  return (
+                    <div key={monthKey} className="mb-10">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-display text-2xl text-foreground">{formatMonthLabel(monthKey)}</h3>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground font-body">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {visits.length} visits
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {hours > 0 ? `${hours}h ` : ""}{mins > 0 ? `${mins}m` : ""}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="space-y-3">
-                      {visits.map((v) => (
-                        <div
-                          key={v.id}
-                          className="rounded-xl border border-border bg-card p-4 hover:border-primary/20 transition-colors"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-display text-lg text-foreground truncate">{v.className}</h4>
-                                <Badge
-                                  variant={v.type === "EVENT" ? "default" : "secondary"}
-                                  className={cn(
-                                    "text-[10px] uppercase tracking-wider shrink-0",
-                                    v.type === "EVENT" && "gradient-purple text-primary-foreground border-0"
-                                  )}
-                                >
-                                  {v.type}
-                                </Badge>
-                              </div>
-                              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground font-body">
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {formatDate(v.date)}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  {v.duration}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" />
-                                  {v.hall}
-                                </span>
-                                {v.instructor && (
+                      <div className="space-y-3">
+                        {visits.map((v) => (
+                          <div
+                            key={v.id}
+                            className="rounded-xl border border-border bg-card p-4 hover:border-primary/20 transition-colors"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-display text-lg text-foreground truncate">{v.className}</h4>
+                                  <Badge
+                                    variant={v.type === "EVENT" ? "default" : "secondary"}
+                                    className={cn(
+                                      "text-[10px] uppercase tracking-wider shrink-0",
+                                      v.type === "EVENT" && "gradient-purple text-primary-foreground border-0"
+                                    )}
+                                  >
+                                    {v.type}
+                                  </Badge>
+                                </div>
+                                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground font-body">
                                   <span className="flex items-center gap-1">
-                                    <UserIcon className="w-3 h-3" />
-                                    {v.instructor}
+                                    <Calendar className="w-3 h-3" />
+                                    {formatDate(v.date)}
                                   </span>
-                                )}
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {v.duration}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    {v.hall}
+                                  </span>
+                                  {v.instructor && (
+                                    <span className="flex items-center gap-1">
+                                      <UserIcon className="w-3 h-3" />
+                                      {v.instructor}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </TabsContent>
 
             {/* ===== MEMBERSHIP TAB ===== */}

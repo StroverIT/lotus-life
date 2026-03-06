@@ -1,6 +1,6 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { isGuestSupabaseUser, upsertPrismaUserFromSupabase } from "@/lib/auth";
-import { UserRole } from "@prisma/client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
 
 export class AuthError extends Error {
   status: number;
@@ -11,17 +11,26 @@ export class AuthError extends Error {
 }
 
 export async function getAuthContext() {
-  const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw new AuthError(error.message, 401);
+  const session = await getServerSession(authOptions);
 
-  const supabaseUser = data.user;
-  if (!supabaseUser) throw new AuthError("not_authenticated", 401);
+  if (!session?.user) {
+    throw new AuthError("not_authenticated", 401);
+  }
 
-  const guest = isGuestSupabaseUser(supabaseUser);
-  const prismaUser = guest ? null : await upsertPrismaUserFromSupabase(supabaseUser);
+  const userId = (session.user as any).id as string | undefined;
+  const guest = (session.user as any).guest as boolean | undefined;
 
-  return { supabaseUser, prismaUser, guest };
+  if (guest || !userId) {
+    return { session, prismaUser: null, guest: true };
+  }
+
+  const prismaUser = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!prismaUser) {
+    return { session, prismaUser: null, guest: true };
+  }
+
+  return { session, prismaUser, guest: false };
 }
 
 export async function requireUser() {
@@ -32,7 +41,7 @@ export async function requireUser() {
 
 export async function requireAdmin() {
   const ctx = await requireUser();
-  if (ctx.prismaUser.role !== UserRole.ADMIN) throw new AuthError("admin_required", 403);
+  if (ctx.prismaUser.role !== "ADMIN") throw new AuthError("admin_required", 403);
   return ctx;
 }
 
