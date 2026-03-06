@@ -78,7 +78,7 @@ const AboutPage = () => {
               {pillars.map((pillar) => (
                 <div
                   key={pillar.title}
-                  className="aa-value aa-hoverLift rounded-xl bg-card border border-border p-8 text-center hover:shadow-lg hover:border-primary/20 transition-all"
+                  className="aa-value aa-hoverLift opacity-0 translate-y-3 rounded-xl bg-card border border-border p-8 text-center hover:shadow-lg hover:border-primary/20 transition-all"
                 >
                   <div className="w-12 h-12 rounded-full gradient-purple flex items-center justify-center mx-auto mb-5">
                     <pillar.icon className="w-6 h-6 text-primary-foreground" />

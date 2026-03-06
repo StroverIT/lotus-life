@@ -73,15 +73,15 @@ export function useAboutAnimations() {
         scrollTrigger: { trigger: ".aa-values", start: "top 80%" },
         y: 12,
         opacity: 0,
-        duration: 0.55,
+        duration: 0.45,
         ease: "power3.out",
       });
 
-      gsap.from(".aa-value", {
+      gsap.to(".aa-value", {
         scrollTrigger: { trigger: ".aa-values", start: "top 80%" },
-        y: 16,
-        opacity: 0,
-        duration: 0.6,
+        y: 0,
+        opacity: 1,
+        duration: 0.4,
         stagger: 0.12,
         ease: "power3.out",
       });
