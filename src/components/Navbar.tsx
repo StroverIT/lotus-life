@@ -81,7 +81,7 @@ const Navbar = () => {
             </Link>
 
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
@@ -99,7 +99,7 @@ const Navbar = () => {
             </div>
 
             {/* CTA */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3">
               {!isLoading && (
                 <>
                   {isAdmin && (
@@ -144,7 +144,7 @@ const Navbar = () => {
             {/* Mobile toggle */}
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 text-foreground"
+              className="lg:hidden p-2 text-foreground"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -153,7 +153,7 @@ const Navbar = () => {
 
         {/* Mobile menu */}
         {isOpen && (
-          <div className="md:hidden glass-purple border-t border-border overflow-hidden">
+          <div className="lg:hidden glass-purple border-t border-border overflow-hidden">
             <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
