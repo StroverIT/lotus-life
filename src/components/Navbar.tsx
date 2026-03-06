@@ -60,7 +60,6 @@ const Navbar = () => {
   const user = session?.user as (typeof session)["user"] & { role?: "USER" | "ADMIN"; guest?: boolean } | undefined;
   const isLoading = status === "loading";
   const isLoggedIn = !!user;
-  console.log("test+++", session);
 
   const isAdmin = isLoggedIn && user?.role === "ADMIN";
 
@@ -101,32 +100,36 @@ const Navbar = () => {
 
             {/* CTA */}
             <div className="hidden md:flex items-center gap-3">
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="px-3 py-2 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-2"
-                >
-                  <Shield className="w-4 h-4" />
-                  Admin
-                </Link>
-              )}
-
-              {!isLoggedIn ? (
-                <Link href="/login">
-                  <Button variant="outline">Login</Button>
-                </Link>
-              ) : (
+              {!isLoading && (
                 <>
-                  <Link
-                    href="/my-account"
-                    className="p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all"
-                    aria-label="My account"
-                  >
-                    <User className="w-5 h-5" />
-                  </Link>
-                  <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
-                    <LogOut className="w-5 h-5" />
-                  </Button>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="px-3 py-2 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-2"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Admin
+                    </Link>
+                  )}
+
+                  {!isLoggedIn ? (
+                    <Link href="/login">
+                      <Button variant="outline">Login</Button>
+                    </Link>
+                  ) : (
+                    <>
+                      <Link
+                        href="/my-account"
+                        className="p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-primary/5 transition-all"
+                        aria-label="My account"
+                      >
+                        <User className="w-5 h-5" />
+                      </Link>
+                      <Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
+                        <LogOut className="w-5 h-5" />
+                      </Button>
+                    </>
+                  )}
                 </>
               )}
 
@@ -168,37 +171,41 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="mt-2 pt-2 border-t border-border">
-                {isAdmin && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <Shield className="w-4 h-4" />
-                    Admin Panel
-                  </Link>
-                )}
+                {!isLoading && (
+                  <>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <Shield className="w-4 h-4" />
+                        Admin Panel
+                      </Link>
+                    )}
 
-                {!isLoggedIn ? (
-                  <Link
-                    href="/login"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <User className="w-4 h-4" />
-                    Login
-                  </Link>
-                ) : (
-                  <div className="flex gap-2 px-4 py-2">
-                    <Link href="/my-account" onClick={() => setIsOpen(false)} className="flex-1">
-                      <Button variant="outline" className="w-full">
-                        My account
-                      </Button>
-                    </Link>
-                    <Button variant="outline" onClick={handleLogout} className="shrink-0">
-                      <LogOut className="w-4 h-4" />
-                    </Button>
-                  </div>
+                    {!isLoggedIn ? (
+                      <Link
+                        href="/login"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-foreground/70 hover:text-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <User className="w-4 h-4" />
+                        Login
+                      </Link>
+                    ) : (
+                      <div className="flex gap-2 px-4 py-2">
+                        <Link href="/my-account" onClick={() => setIsOpen(false)} className="flex-1">
+                          <Button variant="outline" className="w-full">
+                            My account
+                          </Button>
+                        </Link>
+                        <Button variant="outline" onClick={handleLogout} className="shrink-0">
+                          <LogOut className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
                 <Button
                   className="ll-bookNow w-full mt-2 gradient-purple text-primary-foreground border-0"

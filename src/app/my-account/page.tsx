@@ -7,12 +7,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function MyAccountPage() {
-  // const session = await getServerSession(authOptions);
-  // console.log(session);
+  const session = await getServerSession(authOptions);
 
-  // if (!session?.user) {
-  //   redirect("/login");
-  // }
+  if (!session?.user) {
+    redirect("/login?redirect=/my-account");
+  }
 
   return <UserPanel />;
 }
