@@ -40,8 +40,8 @@ const YogaPage = () => {
     if (newCards.length) {
       gsap.fromTo(
         newCards,
-        { y: 14, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.35, stagger: 0.05, ease: "power3.out" },
+        { y: 14, },
+        { y: 0, opacity: 1, duration: 0.10, stagger: 0.05, },
       );
     }
 
@@ -89,16 +89,16 @@ const YogaPage = () => {
             {hasSchedule && (
               <div className="yy-days flex overflow-x-auto gap-2 mb-10 pb-2 justify-center flex-wrap">
                 {weeklySchedule.map((day, i) => (
-                <button
-                  key={day.day}
-                  onClick={() => onDayClick(i)}
-                  className={cn(
-                    "yy-day opacity-0 translate-y-2 px-5 py-2.5 rounded-full text-sm font-medium font-body transition-all whitespace-nowrap",
-                    currentDayIndex === i
-                      ? "is-active gradient-purple text-primary-foreground shadow-lg"
-                      : "bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary",
-                  )}
-                >
+                  <button
+                    key={day.day}
+                    onClick={() => onDayClick(i)}
+                    className={cn(
+                      "yy-day opacity-0 translate-y-2 px-5 py-2.5 rounded-full text-sm font-medium font-body transition-all whitespace-nowrap",
+                      currentDayIndex === i
+                        ? "is-active gradient-purple text-primary-foreground shadow-lg"
+                        : "bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary",
+                    )}
+                  >
                     {day.day}
                   </button>
                 ))}
@@ -111,53 +111,53 @@ const YogaPage = () => {
             >
               {currentDay?.classes?.length
                 ? currentDay.classes.map((cls) => (
-                    <div
-                      key={cls.id}
-                      className="yy-classCard yy-hoverLift opacity-0 translate-y-3 group rounded-xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-display text-2xl text-foreground mb-2">
-                            {cls.name}
-                          </h3>
-                          <p className="text-muted-foreground text-sm font-body mb-3">
-                            {cls.description}
-                          </p>
-                          <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-body">
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3.5 h-3.5" />
-                              {cls.time} · {cls.duration}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3.5 h-3.5" />
-                              {cls.hall}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <User className="w-3.5 h-3.5" />
-                              {cls.instructor}
-                            </span>
-                          </div>
+                  <div
+                    key={cls.id}
+                    className="yy-classCard yy-hoverLift opacity-0 translate-y-3 group rounded-xl border border-border bg-card p-6 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-display text-2xl text-foreground mb-2">
+                          {cls.name}
+                        </h3>
+                        <p className="text-muted-foreground text-sm font-body mb-3">
+                          {cls.description}
+                        </p>
+                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground font-body">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5" />
+                            {cls.time} · {cls.duration}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {cls.hall}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <User className="w-3.5 h-3.5" />
+                            {cls.instructor}
+                          </span>
                         </div>
-                        <Button
-                          className="gradient-purple text-primary-foreground border-0 hover:opacity-90 shrink-0"
-                          onClick={() =>
-                            openSignup(
-                              cls.name,
-                              currentDay?.day,
-                              cls.time,
-                            )
-                          }
-                        >
-                          Sign Up
-                        </Button>
                       </div>
+                      <Button
+                        className="gradient-purple text-primary-foreground border-0 hover:opacity-90 shrink-0"
+                        onClick={() =>
+                          openSignup(
+                            cls.name,
+                            currentDay?.day,
+                            cls.time,
+                          )
+                        }
+                      >
+                        Sign Up
+                      </Button>
                     </div>
-                  ))
+                  </div>
+                ))
                 : (
                   <p className="text-center text-sm text-muted-foreground font-body">
                     No classes scheduled yet for this day.
                   </p>
-                  )}
+                )}
             </div>
 
             <p className="yy-pricing text-center text-sm text-muted-foreground mt-8 font-body">
