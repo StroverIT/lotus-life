@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { MODAL_IDS } from "@/constants/modalIds";
+import { addYogaGuestSignup, MODAL_IDS } from "@/constants/modalIds";
 import { AuthOptions } from "@/components/ui/auth-options";
 import { toast } from "@/hooks/use-toast";
 
@@ -180,6 +180,7 @@ const EventSignupDialog = forwardRef<EventSignupDialogHandle, EventSignupDialogP
             return;
           }
         }
+        addYogaGuestSignup(yogaClassId, yogaEventId);
         toast({
           title: "You're signed up!",
           description: `You've been registered for ${eventName}${eventDay || eventTime ? ` on ${[eventDay, eventTime].filter(Boolean).join(" at ")}` : ""}.`,

@@ -14,7 +14,7 @@ import EventSignupDialog, {
   type EventSignupDialogHandle,
   type EventSignupDraftData,
 } from "@/components/EventSignupDialog";
-import { MODAL_IDS } from "@/constants/modalIds";
+import { getYogaGuestSignups, MODAL_IDS } from "@/constants/modalIds";
 import { usePendingModal } from "@/context/PendingModalContext";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useYogaAnimations } from "@/hooks/useYogaAnimations";
@@ -121,8 +121,9 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
 
   useEffect(() => {
     if (!session?.user) {
-      setBookedClassIds(new Set());
-      setBookedEventIds(new Set());
+      const guest = getYogaGuestSignups();
+      setBookedClassIds(new Set(guest.yogaClassIds));
+      setBookedEventIds(new Set(guest.yogaEventIds));
       return;
     }
     let alive = true;
@@ -161,15 +162,15 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
     yogaClassId?: string,
     yogaEventId?: string
   ) => {
+    if (yogaClassId && bookedClassIds.has(yogaClassId)) {
+      toast.info("You're already signed up for this class");
+      return;
+    }
+    if (yogaEventId && bookedEventIds.has(yogaEventId)) {
+      toast.info("You're already signed up for this event");
+      return;
+    }
     if (session?.user) {
-      if (yogaClassId && bookedClassIds.has(yogaClassId)) {
-        toast.info("You're already signed up for this class");
-        return;
-      }
-      if (yogaEventId && bookedEventIds.has(yogaEventId)) {
-        toast.info("You're already signed up for this event");
-        return;
-      }
       if (yogaClassId || yogaEventId) {
         (async () => {
           try {
@@ -353,9 +354,9 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
                                 cls.id,
                               )
                             }
-                            disabled={!!(session?.user && bookedClassIds.has(cls.id))}
+                            disabled={bookedClassIds.has(cls.id)}
                           >
-                            {session?.user && bookedClassIds.has(cls.id) ? "Already signed up" : "Sign Up"}
+                            {bookedClassIds.has(cls.id) ? "Already signed up" : "Sign Up"}
                           </Button>
                         </div>
                       </div>
@@ -435,9 +436,9 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
                     onClick={() =>
                       openSignup(event.name, event.dateLabel, event.time, undefined, event.id)
                     }
-                    disabled={!!(session?.user && bookedEventIds.has(event.id))}
+                    disabled={bookedEventIds.has(event.id)}
                   >
-                    {session?.user && bookedEventIds.has(event.id) ? "Already signed up" : <>Reserve Spot <ArrowRight className="w-4 h-4 ml-1" /></>}
+                    {bookedEventIds.has(event.id) ? "Already signed up" : <>Reserve Spot <ArrowRight className="w-4 h-4 ml-1" /></>}
                   </Button>
                 </div>
               ))}
