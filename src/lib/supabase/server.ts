@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 export function getSupabaseServerClient() {
@@ -7,20 +6,8 @@ export function getSupabaseServerClient() {
   if (!url || !anonKey) {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
-
-  const cookieStore = cookies();
-
-  return createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll(cookiesToSet) {
-        for (const { name, value, options } of cookiesToSet) {
-          cookieStore.set(name, value, options);
-        }
-      },
-    },
-  });
+  // We now use NextAuth for authentication; Supabase is only used as Postgres via Prisma.
+  // The cookie adapter is not needed, so we let the client manage cookies internally.
+  return createServerClient(url, anonKey);
 }
 
