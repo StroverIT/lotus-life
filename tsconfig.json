@@ -11,6 +11,7 @@
     "strictNullChecks": false
   },
   "files": [],
+  "exclude": ["scripts"],
   "references": [
     {
       "path": "./tsconfig.app.json"
