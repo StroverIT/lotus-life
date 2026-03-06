@@ -12,6 +12,13 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "prisma db seed",
+    "db:push": "prisma db push",
+    "db:push:prod": "sh -c 'set -a && . ./.env.production && set +a && prisma db push'",
+    "db:migrate:prod": "sh -c 'set -a && . ./.env.production && set +a && prisma migrate deploy'",
+    "sync:prod": "tsx scripts/sync-to-production.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -80,6 +87,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "dotenv": "^16.6.1",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
