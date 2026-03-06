@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Facebook, Chrome } from "lucide-react";
+import { signIn as signInNextAuth } from "next-auth/react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function getRedirectParam(params: URLSearchParams | null) {
   const redirect = params?.get("redirect") ?? "/my-account";
@@ -23,8 +23,6 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   const redirectTo = useMemo(() => getRedirectParam(searchParams), [searchParams]);
 
-  const supabase = useMemo(() => getSupabaseBrowserClient(), []);
-
   const [busy, setBusy] = useState(false);
 
   const [loginEmail, setLoginEmail] = useState("");
@@ -35,24 +33,18 @@ export default function LoginClient() {
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
 
-  const afterAuth = async () => {
-    try {
-      await fetch("/api/auth/sync", { method: "POST" });
-    } catch {
-      // ignore: role/name sync will retry via /api/me
-    }
-    router.push(redirectTo);
-  };
-
   const signIn = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const result = await signInNextAuth("credentials", {
         email: loginEmail.trim(),
         password: loginPassword,
+        callbackUrl: redirectTo,
+        redirect: true,
       });
-      if (error) throw error;
-      await afterAuth();
+      if ((result as any)?.error) {
+        throw new Error((result as any).error);
+      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Login failed";
       toast.error(message);
@@ -64,21 +56,17 @@ export default function LoginClient() {
   const register = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const result = await signInNextAuth("credentials", {
         email: regEmail.trim(),
         password: regPassword,
-        options: {
-          data: {
-            full_name: regName,
-            phone: regPhone,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
-        },
+        name: regName,
+        phone: regPhone,
+        callbackUrl: redirectTo,
+        redirect: true,
       });
-      if (error) throw error;
-
-      toast.success("Account created. You can continue now.");
-      await afterAuth();
+      if ((result as any)?.error) {
+        throw new Error((result as any).error);
+      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Registration failed";
       toast.error(message);
@@ -90,13 +78,13 @@ export default function LoginClient() {
   const oauth = async (provider: "google" | "facebook") => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`,
-        },
+      const result = await signInNextAuth(provider, {
+        callbackUrl: redirectTo,
+        redirect: true,
       });
-      if (error) throw error;
+      if ((result as any)?.error) {
+        throw new Error((result as any).error);
+      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "OAuth login failed";
       toast.error(message);
@@ -107,9 +95,13 @@ export default function LoginClient() {
   const guest = async () => {
     setBusy(true);
     try {
-      const { error } = await supabase.auth.signInAnonymously();
-      if (error) throw error;
-      router.push(redirectTo);
+      const result = await signInNextAuth("guest", {
+        callbackUrl: redirectTo,
+        redirect: true,
+      });
+      if ((result as any)?.error) {
+        throw new Error((result as any).error);
+      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : "Guest sign-in failed";
       toast.error(message);
