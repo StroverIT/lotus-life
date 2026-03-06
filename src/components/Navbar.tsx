@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -30,11 +31,13 @@ const navLinks = [
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
   const [bookOpen, setBookOpen] = useState(false);
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const shellRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   useBookNowPulse();
@@ -50,6 +53,53 @@ const Navbar = () => {
       prefersReducedMotion,
     );
   }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+
+    if (prefersReducedMotion) {
+      setIsMenuVisible(isOpen);
+      return;
+    }
+
+    if (!menu) return;
+
+    gsap.killTweensOf(menu);
+
+    if (isOpen) {
+      gsap.fromTo(
+        menu,
+        { height: 0, opacity: 0, y: -8 },
+        {
+          height: "auto",
+          opacity: 1,
+          y: 0,
+          duration: 0.4,
+          ease: "power3.out",
+        },
+      );
+    } else {
+      gsap.to(menu, {
+        height: 0,
+        opacity: 0,
+        y: -8,
+        duration: 0.3,
+        ease: "power2.inOut",
+        onComplete: () => {
+          setIsMenuVisible(false);
+        },
+      });
+    }
+  }, [isOpen, prefersReducedMotion]);
+
+  const toggleMobileMenu = () => {
+    if (isOpen) {
+      setIsOpen(false);
+    } else {
+      setIsMenuVisible(true);
+      setIsOpen(true);
+    }
+  };
 
   const handleBookChoice = (path: string) => {
     setBookOpen(false);
@@ -143,7 +193,7 @@ const Navbar = () => {
 
             {/* Mobile toggle */}
             <button
-              onClick={() => setIsOpen(!isOpen)}
+            onClick={toggleMobileMenu}
               className="lg:hidden p-2 text-foreground"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -152,8 +202,11 @@ const Navbar = () => {
         </div>
 
         {/* Mobile menu */}
-        {isOpen && (
-          <div className="lg:hidden glass-purple border-t border-border overflow-hidden">
+        {isMenuVisible && (
+          <div
+            ref={menuRef}
+            className="lg:hidden bg-white border-t border-border overflow-hidden"
+          >
             <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
               {navLinks.map((link) => (
                 <Link
