@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Check, Star } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -10,18 +8,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMembershipsAnimations } from "@/hooks/useMembershipsAnimations";
+import { MembershipSignupDialog } from "@/components/MembershipSignupDialog";
 import type { Membership } from "@/types/catalog";
 
-const WHATSAPP_URL = "https://wa.me/359883317785";
 const singleClassPrice = "€10";
 
 const MembershipsPage = () => {
-  const router = useRouter();
   const [contentLoaded, setContentLoaded] = useState(false);
   const [plans, setPlans] = useState<Membership[]>([]);
-  const [me, setMe] = useState<{ kind: "none" | "guest" | "user"; role?: "USER" | "ADMIN" }>({
-    kind: "none",
-  });
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Membership | null>(null);
 
   const shouldAnimate = usePageFirstVisit("memberships");
   const scope = useMembershipsAnimations(shouldAnimate);
@@ -35,17 +31,13 @@ const MembershipsPage = () => {
     let alive = true;
     (async () => {
       try {
-        const [plansRes, meRes] = await Promise.all([fetch("/api/memberships"), fetch("/api/me")]);
-        const [plansJson, meJson] = await Promise.all([plansRes.json(), meRes.json()]);
+        const plansRes = await fetch("/api/memberships");
+        const plansJson = await plansRes.json();
         if (!alive) return;
         setPlans(plansJson as Membership[]);
-        if (!meJson?.user) setMe({ kind: "none" });
-        else if (meJson.user.kind === "guest") setMe({ kind: "guest" });
-        else if (meJson.user.kind === "user") setMe({ kind: "user", role: meJson.user.role });
       } catch {
         if (!alive) return;
         setPlans([]);
-        setMe({ kind: "none" });
       }
     })();
     return () => {
@@ -53,17 +45,9 @@ const MembershipsPage = () => {
     };
   }, []);
 
-  const startMembership = (plan: Membership) => {
-    if (me.kind !== "user") {
-      const redirect = `/memberships?plan=${encodeURIComponent(plan.id)}`;
-      router.push(`/login?redirect=${encodeURIComponent(redirect)}`);
-      return;
-    }
-    window.open(
-      `${WHATSAPP_URL}?text=${encodeURIComponent(`Hi! I'm interested in the ${plan.name} membership`)}`,
-      "_blank",
-      "noopener,noreferrer",
-    );
+  const openSignup = (plan: Membership | null) => {
+    setSelectedPlan(plan);
+    setSignupOpen(true);
   };
 
   return (
@@ -89,14 +73,7 @@ const MembershipsPage = () => {
             </p>
             <Button
               className="pp-bookNowTop mt-6 gradient-purple text-primary-foreground border-0 hover:opacity-90"
-              onClick={() => {
-                if (me.kind !== "user") return router.push(`/login?redirect=${encodeURIComponent("/memberships")}`);
-                window.open(
-                  `${WHATSAPP_URL}?text=${encodeURIComponent("Hi! I'd love to discuss memberships")}`,
-                  "_blank",
-                  "noopener,noreferrer",
-                );
-              }}
+              onClick={() => openSignup(plans[0] ?? null)}
             >
               Book Now
             </Button>
@@ -194,8 +171,8 @@ const MembershipsPage = () => {
                         </ul>
 
                         <Button
-                      type="button"
-                      onClick={() => startMembership(plan)}
+                          type="button"
+                          onClick={() => openSignup(plan)}
                           className={cn(
                             "pp-cta w-full",
                             plan.highlighted
@@ -203,7 +180,7 @@ const MembershipsPage = () => {
                               : "gradient-purple text-primary-foreground border-0 hover:opacity-90",
                           )}
                         >
-                      Get Started
+                          Get Started
                         </Button>
                       </div>
                     );
@@ -223,6 +200,12 @@ const MembershipsPage = () => {
             )}
           </div>
         </section>
+
+        <MembershipSignupDialog
+          open={signupOpen}
+          onOpenChange={setSignupOpen}
+          plan={selectedPlan}
+        />
       </div>
     </Layout>
   );

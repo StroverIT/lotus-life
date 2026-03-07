@@ -27,6 +27,16 @@ enum Season {
   winter
 }
 
+enum UserMembershipStatus {
+  PENDING
+  REJECTED
+  SUCCESSFUL
+}
+
+enum PaymentMethod {
+  CASH
+}
+
 model Membership {
   id          String  @id
   name        String
@@ -36,10 +46,28 @@ model Membership {
   highlighted Boolean @default(false)
   badge       String?
 
-  users User[]
+  users         User[]
+  userMemberships UserMembership[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model UserMembership {
+  id           String              @id @default(cuid())
+  userId       String?
+  user         User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  membershipId String
+  membership   Membership          @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  status       UserMembershipStatus @default(PENDING)
+  paymentMethod PaymentMethod      @default(CASH)
+
+  guestName   String?
+  guestEmail  String?
+  guestPhone  String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model User {
@@ -65,6 +93,7 @@ model User {
   massageBookings MassageBooking[]
   scheduleBookings ScheduleBooking[]
   eventBookings EventBooking[]
+  userMemberships UserMembership[]
 
   accounts Account[]
   sessions Session[]

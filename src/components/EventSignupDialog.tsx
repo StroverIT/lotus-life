@@ -1,6 +1,7 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { addYogaGuestSignup, MODAL_IDS } from "@/constants/modalIds";
 import { AuthOptions } from "@/components/ui/auth-options";
 import { toast } from "@/hooks/use-toast";
@@ -59,77 +60,63 @@ const EventSignupDialog = forwardRef<EventSignupDialogHandle, EventSignupDialogP
     [onOpenChange, getData]
   );
 
-  useEffect(() => {
-    if (!open || !session?.user) return;
+  const handleUserConfirm = useCallback(async () => {
     if (!yogaClassId && !yogaEventId) {
+      toast({ title: "Choose a class or event", description: "Select a class or event below to reserve your spot." });
+      return;
+    }
+    setCreating(true);
+    try {
+      if (yogaClassId) {
+        const res = await fetch("/api/schedule-bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ yogaClassId }),
+        });
+        const data = (await res.json()) as { ok?: boolean; error?: string };
+        if (!res.ok || !data.ok) {
+          if (res.status === 409) {
+            toast({ title: "Already signed up", description: "You're already registered for this class." });
+          } else if (res.status === 401) {
+            toast({ title: "Sign in required", description: "Please sign in with Google or Facebook to reserve your spot." });
+          } else {
+            toast({ title: "Booking failed", description: data.error ?? "Please try again." });
+          }
+          onOpenChange(false);
+          return;
+        }
+      }
+      if (yogaEventId) {
+        const res = await fetch("/api/event-bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ yogaEventId }),
+        });
+        const data = (await res.json()) as { ok?: boolean; error?: string };
+        if (!res.ok || !data.ok) {
+          if (res.status === 409) {
+            toast({ title: "Already signed up", description: "You're already registered for this event." });
+          } else if (res.status === 401) {
+            toast({ title: "Sign in required", description: "Please sign in with Google or Facebook to reserve your spot." });
+          } else {
+            toast({ title: "Booking failed", description: data.error ?? "Please try again." });
+          }
+          onOpenChange(false);
+          return;
+        }
+      }
       toast({
         title: "You're signed up!",
         description: `You've been registered for ${eventName}${detail ? ` on ${detail}` : ""}.`,
       });
       onOpenChange(false);
-      return;
+    } catch {
+      toast({ title: "Booking failed", description: "Please try again." });
+      onOpenChange(false);
+    } finally {
+      setCreating(false);
     }
-    let alive = true;
-    setCreating(true);
-    (async () => {
-      try {
-        if (yogaClassId) {
-          const res = await fetch("/api/schedule-bookings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ yogaClassId }),
-          });
-          const data = (await res.json()) as { ok?: boolean; error?: string };
-          if (!alive) return;
-            if (!res.ok || !data.ok) {
-            if (res.status === 409) {
-              toast({ title: "Already signed up", description: "You're already registered for this class." });
-            } else if (res.status === 401) {
-              toast({ title: "Sign in required", description: "Please sign in with Google or Facebook to reserve your spot." });
-            } else {
-              toast({ title: "Booking failed", description: data.error ?? "Please try again." });
-            }
-            onOpenChange(false);
-            return;
-          }
-        }
-        if (yogaEventId) {
-          const res = await fetch("/api/event-bookings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ yogaEventId }),
-          });
-          const data = (await res.json()) as { ok?: boolean; error?: string };
-          if (!alive) return;
-          if (!res.ok || !data.ok) {
-            if (res.status === 409) {
-              toast({ title: "Already signed up", description: "You're already registered for this event." });
-            } else if (res.status === 401) {
-              toast({ title: "Sign in required", description: "Please sign in with Google or Facebook to reserve your spot." });
-            } else {
-              toast({ title: "Booking failed", description: data.error ?? "Please try again." });
-            }
-            onOpenChange(false);
-            return;
-          }
-        }
-        toast({
-          title: "You're signed up!",
-          description: `You've been registered for ${eventName}${detail ? ` on ${detail}` : ""}.`,
-        });
-        onOpenChange(false);
-      } catch {
-        if (!alive) return;
-        toast({ title: "Booking failed", description: "Please try again." });
-        onOpenChange(false);
-      } finally {
-        if (alive) setCreating(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [open, session?.user, eventName, detail, onOpenChange, yogaClassId, yogaEventId]);
+  }, [yogaClassId, yogaEventId, eventName, detail, onOpenChange]);
 
   const handleGuestSubmit = useCallback(
     async (data: { name: string; email: string; phone: string }) => {
@@ -197,24 +184,35 @@ const EventSignupDialog = forwardRef<EventSignupDialogHandle, EventSignupDialogP
   );
 
   if (session?.user) {
+    const hasSelection = !!(yogaClassId || yogaEventId);
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display text-2xl">Sign Up</DialogTitle>
             <DialogDescription className="font-body">
-              {(yogaClassId || yogaEventId) && creating
-                ? "Confirming your spot…"
-                : "Reserve your spot for "}
-              {!(yogaClassId || yogaEventId) || !creating ? (
+              {hasSelection ? (
                 <>
-                  <span className="font-semibold text-foreground">{eventName}</span>
+                  Reserve your spot for <span className="font-semibold text-foreground">{eventName}</span>
                   {eventDay && <> on <span className="font-semibold text-foreground">{eventDay}</span></>}
                   {eventTime && <> at <span className="font-semibold text-foreground">{eventTime}</span></>}
                 </>
-              ) : null}
+              ) : (
+                "Choose a class or event below to reserve your spot."
+              )}
             </DialogDescription>
           </DialogHeader>
+          {hasSelection && (
+            <div className="mt-4">
+              <Button
+                className="w-full gradient-purple text-primary-foreground border-0 hover:opacity-90 font-body"
+                onClick={handleUserConfirm}
+                disabled={creating}
+              >
+                {creating ? "Confirming…" : "Confirm booking"}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     );
