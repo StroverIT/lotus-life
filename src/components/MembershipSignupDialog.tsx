@@ -70,12 +70,12 @@ export function MembershipSignupDialog({
       });
       const json = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) {
-        toast({
-          title: "Request failed",
-          description: json.error === "guest_name_email_phone_required"
-            ? "Please enter your name, email and phone."
-            : json.error ?? "Please try again.",
-        });
+        toast.error(
+          "Request failed",
+          json.error === "guest_name_email_phone_required"
+            ? { description: "Please enter your name, email and phone." }
+            : { description: json.error ?? "Please try again." }
+        );
         return false;
       }
       return true;
@@ -89,8 +89,7 @@ export function MembershipSignupDialog({
     try {
       const ok = await submitMembershipRequest();
       if (ok) {
-        toast({
-          title: "Membership request sent",
+        toast.success("Membership request sent", {
           description: `Your request for ${plan.name} has been received. Payment is by cash only—we'll contact you to confirm.`,
         });
         onOpenChange(false);
@@ -103,15 +102,14 @@ export function MembershipSignupDialog({
   const handleGuestSubmit = useCallback(
     async (data: { name: string; email: string; phone: string }) => {
       if (!plan?.id) {
-        toast({ title: "Error", description: "Please select a plan first." });
+        toast.error("Error", { description: "Please select a plan first." });
         return;
       }
       setGuestBusy(true);
       try {
         const ok = await submitMembershipRequest(data);
         if (ok) {
-          toast({
-            title: "Membership request sent",
+          toast.success("Membership request sent", {
             description: `Your request for ${plan.name} has been received. Payment is by cash only—we'll contact you to confirm.`,
           });
           setGuestFormResetKey((k) => k + 1);
