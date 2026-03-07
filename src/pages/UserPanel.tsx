@@ -5,6 +5,7 @@ import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpR
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { MembershipPlanCards } from "@/components/MembershipPlanCards";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { fadeInUp } from "@/lib/animations";
 import type { Membership } from "@/types/catalog";
@@ -490,102 +490,13 @@ const UserPanel = () => {
               {/* All Plans */}
               <Separator className="my-8" />
               <h3 className="font-display text-2xl mb-6">All Plans</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plans.map((plan, idx) => {
-                  const isDisplayPlan = plan.id === displayPlan?.id;
-                  const isUpgrade = currentIdx >= 0 && idx > currentIdx;
-                  const isDowngrade = currentIdx >= 0 && idx < currentIdx;
-                  return (
-                    <div
-                      key={plan.id}
-                      className={cn(
-                        "rounded-xl border bg-card p-6 transition-all relative",
-                        isDisplayPlan && membershipStatusLabel === "Active" && "border-emerald-500 dark:border-emerald-600 shadow-lg shadow-emerald-500/10",
-                        isDisplayPlan && membershipStatusLabel === "Pending" && "border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10",
-                        isDisplayPlan && membershipStatusLabel === "Rejected" && "border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/10",
-                        !isDisplayPlan && "border-border hover:border-primary/20",
-                      )}
-                    >
-                      {plan.badge && !isUpgrade && !isDowngrade && !isDisplayPlan && (
-                        <Badge className="absolute -top-2.5 left-4 gradient-purple text-primary-foreground border-0 text-[10px]">
-                          {plan.badge}
-                        </Badge>
-                      )}
-                      {isDisplayPlan && (
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "absolute -top-2.5 right-4 text-[10px] gap-1",
-                            membershipStatusLabel === "Pending" &&
-                              "border-amber-200 dark:border-amber-800 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200",
-                            membershipStatusLabel === "Active" &&
-                              "border-emerald-500 dark:border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200",
-                            membershipStatusLabel === "Rejected" &&
-                              "border-red-200 dark:border-red-800 bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-200",
-                          )}
-                        >
-                          {membershipStatusLabel === "Pending" ? (
-                            <>
-                              <Clock className="w-3 h-3" /> Awaiting payment
-                            </>
-                          ) : membershipStatusLabel === "Rejected" ? (
-                            <>
-                              <XCircle className="w-3 h-3" /> Rejected
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-3 h-3" /> Current
-                            </>
-                          )}
-                        </Badge>
-                      )}
-                      {isUpgrade && (
-                        <Badge className="absolute -top-2.5 right-4 gradient-purple text-primary-foreground border-0 text-[10px] gap-1">
-                          <ArrowUpRight className="w-3 h-3" /> Upgrade
-                        </Badge>
-                      )}
-                      {isDowngrade && (
-                        <Badge variant="secondary" className="absolute -top-2.5 right-4 text-[10px]">
-                          Downgrade
-                        </Badge>
-                      )}
-                      <h4 className="font-display text-xl mt-2 mb-1">{plan.name}</h4>
-                      <p className="text-primary font-display text-2xl mb-4">
-                        {plan.price} <span className="text-muted-foreground text-xs font-body">/ {plan.period}</span>
-                      </p>
-                      <ul className="space-y-1.5 mb-5">
-                        {plan.features.map((f) => (
-                          <li key={f} className="flex items-start gap-2 text-xs font-body text-muted-foreground">
-                            <ChevronRight className="w-3 h-3 text-primary shrink-0 mt-0.5" />
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                      {isDisplayPlan ? (
-                        membershipStatusLabel === "Pending" ? (
-                          <p className="text-center text-xs text-muted-foreground font-body py-1">
-                            Pay by cash at the studio — we&apos;ll confirm when received.
-                          </p>
-                        ) : membershipStatusLabel === "Rejected" ? (
-                          <p className="text-center text-xs text-muted-foreground font-body py-1">
-                            Request was not approved. You can choose another plan.
-                          </p>
-                        ) : (
-                          <Button variant="outline" className="w-full border-emerald-500 text-emerald-600 dark:text-emerald-400" disabled>
-                            Current Plan
-                          </Button>
-                        )
-                      ) : (
-                        <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                          <Link href={isUpgrade ? "/memberships?upgrade=1" : isDowngrade ? "/memberships?downgrade=1" : "/memberships"}>
-                            {isUpgrade ? "Upgrade" : isDowngrade ? "Downgrade" : "Choose Plan"}
-                          </Link>
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+              <MembershipPlanCards
+                plans={plans}
+                currentMembershipId={currentMembershipId}
+                rejectedPlanId={userMemberships.find((a) => a.status === "REJECTED")?.membershipId ?? null}
+                status={membershipStatusLabel}
+                layout="compact"
+              />
             </TabsContent>
           </Tabs>
         </div>

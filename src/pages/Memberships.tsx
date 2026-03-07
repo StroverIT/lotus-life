@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Check, Star, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMembershipsAnimations } from "@/hooks/useMembershipsAnimations";
 import { MembershipSignupDialog } from "@/components/MembershipSignupDialog";
+import { MembershipPlanCards } from "@/components/MembershipPlanCards";
 import type { Membership } from "@/types/catalog";
 
 const singleClassPrice = "€10";
@@ -138,161 +136,15 @@ const MembershipsPage = () => {
               </>
             ) : (
               <>
-                <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                  {plans.map((plan, idx) => {
-                    const currency = plan.price.replace(/\d/g, "").trim() || "€";
-                    const amount = Number(
-                      plan.price.replace(/[^\d]/g, ""),
-                    );
-                    const isCurrent = plan.id === currentMembershipId;
-                    const isRejectedPlan = plan.id === rejectedPlanId;
-                    const isDisplayPlan = isCurrent || isRejectedPlan;
-                    const isUpgrade = currentIdx >= 0 && idx > currentIdx;
-                    const isDowngrade = currentIdx >= 0 && idx < currentIdx;
-
-                    return (
-                      <div
-                        key={plan.id}
-                        className={cn(
-                          "pp-card relative rounded-2xl p-8 flex flex-col",
-                          plan.highlighted && !isDisplayPlan
-                            ? "is-popular gradient-purple text-primary-foreground shadow-2xl shadow-primary/20 scale-[1.02]"
-                            : "border border-border bg-card",
-                          isCurrent && isSuccessful && "border-2 border-emerald-500 dark:border-emerald-600 shadow-lg shadow-emerald-500/10",
-                          isCurrent && isPending && "border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20",
-                          isRejectedPlan && "border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20",
-                        )}
-                      >
-                        {isCurrent && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            {isPending ? (
-                              <Badge className="gap-1.5 border-0 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 text-xs font-body font-medium">
-                                <Clock className="w-3.5 h-3.5" />
-                                Awaiting payment
-                              </Badge>
-                            ) : (
-                              <Badge className="gap-1.5 border-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 text-xs font-body font-medium">
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                Current plan
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                        {isRejectedPlan && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <Badge className="gap-1.5 border-0 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 text-xs font-body font-medium">
-                              <XCircle className="w-3.5 h-3.5" />
-                              Request rejected
-                            </Badge>
-                          </div>
-                        )}
-                        {isUpgrade && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <Badge className="gap-1 gradient-purple text-primary-foreground border-0 text-xs font-body">
-                              <ArrowUpRight className="w-3 h-3" /> Upgrade
-                            </Badge>
-                          </div>
-                        )}
-                        {isDowngrade && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <Badge variant="secondary" className="text-xs font-body gap-1">
-                              <ArrowDownRight className="w-3 h-3" /> Downgrade
-                            </Badge>
-                          </div>
-                        )}
-                        {plan.badge && !isDisplayPlan && !isUpgrade && !isDowngrade && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <span className="pp-badge flex items-center gap-1 px-4 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold font-body">
-                              <Star className="w-3 h-3" /> {plan.badge}
-                            </span>
-                          </div>
-                        )}
-
-                        <h3 className="pp-planName font-display text-2xl mb-2">
-                          {plan.name}
-                        </h3>
-                        <div className="mb-6">
-                          <span className="font-display text-4xl font-semibold">
-                            {currency}
-                            <span className="pp-priceNum ml-1">
-                              {Number.isNaN(amount) ? plan.price : amount}
-                            </span>
-                          </span>
-                          <span
-                            className={cn(
-                              "pp-priceUnit text-sm font-body ml-1",
-                              (plan.highlighted && !isDisplayPlan)
-                                ? "text-primary-foreground/70"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {plan.period}
-                          </span>
-                        </div>
-
-                        <ul className="flex-1 space-y-3 mb-8">
-                          {plan.features.map((f) => (
-                            <li
-                              key={f}
-                              className="pp-perk flex items-start gap-2 text-sm font-body"
-                            >
-                              <Check
-                                className={cn(
-                                  "w-4 h-4 shrink-0 mt-0.5",
-                                  (plan.highlighted && !isDisplayPlan) ? "text-accent" : "text-primary",
-                                )}
-                              />
-                              <span
-                                className={
-                                  (plan.highlighted && !isDisplayPlan)
-                                    ? "text-primary-foreground/80"
-                                    : "text-muted-foreground"
-                                }
-                              >
-                                {f}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-
-                        {isCurrent ? (
-                          isPending ? (
-                            <p className="text-center text-sm text-muted-foreground font-body py-2">
-                              Pay by cash at the studio — we&apos;ll confirm when received.
-                            </p>
-                          ) : (
-                            <Button
-                              type="button"
-                              disabled
-                              variant="outline"
-                              className="w-full border-emerald-500 text-emerald-600 dark:text-emerald-400"
-                            >
-                              Current plan
-                            </Button>
-                          )
-                        ) : isRejectedPlan ? (
-                          <p className="text-center text-sm text-muted-foreground font-body py-2">
-                            This request was not approved. You can choose another plan.
-                          </p>
-                        ) : (
-                          <Button
-                            type="button"
-                            onClick={() => openSignup(plan)}
-                            className={cn(
-                              "pp-cta w-full",
-                              plan.highlighted && !isUpgrade && !isDowngrade
-                                ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-                                : "gradient-purple text-primary-foreground border-0 hover:opacity-90",
-                              isUpgrade && "gradient-purple text-primary-foreground border-0 hover:opacity-90",
-                              isDowngrade && "border-border bg-secondary hover:bg-secondary/80",
-                            )}
-                          >
-                            {isUpgrade ? "Upgrade" : isDowngrade ? "Downgrade" : "Get Started"}
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="pp-grid">
+                  <MembershipPlanCards
+                    plans={plans}
+                    currentMembershipId={currentMembershipId}
+                    rejectedPlanId={rejectedPlanId}
+                    status={isPending ? "Pending" : isSuccessful ? "Active" : null}
+                    layout="featured"
+                    onSelectPlan={openSignup}
+                  />
                 </div>
 
                 <div className="pp-dropin text-center mt-12 p-8 rounded-xl bg-secondary max-w-md mx-auto">
