@@ -20,6 +20,7 @@ import "dotenv/config";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { createClient } from "@supabase/supabase-js";
 
 const BLOG_BUCKET = "blog";
@@ -68,11 +69,11 @@ if (!sourceDatabaseUrl || !targetDatabaseUrl) {
 }
 
 const prismaSource = new PrismaClient({
-  datasources: { db: { url: sourceDatabaseUrl } },
+  adapter: new PrismaPg({ connectionString: sourceDatabaseUrl }),
 });
 
 const prismaTarget = new PrismaClient({
-  datasources: { db: { url: targetDatabaseUrl } },
+  adapter: new PrismaPg({ connectionString: targetDatabaseUrl }),
 });
 
 const P2021_TABLE_DOES_NOT_EXIST = "P2021";
