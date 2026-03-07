@@ -96,10 +96,22 @@ const Footer = () => {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <a href="#" className="p-2 rounded-full bg-primary-foreground/10 hover:bg-accent/30 transition-colors">
+              <a
+                href="https://www.instagram.com/lotuslife.breathe.move.create/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full bg-primary-foreground/10 hover:bg-accent/30 transition-colors"
+                aria-label="Instagram"
+              >
                 <Instagram className="w-4 h-4" />
               </a>
-              <a href="#" className="p-2 rounded-full bg-primary-foreground/10 hover:bg-accent/30 transition-colors">
+              <a
+                href="https://www.facebook.com/lotuslife777"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full bg-primary-foreground/10 hover:bg-accent/30 transition-colors"
+                aria-label="Facebook"
+              >
                 <Facebook className="w-4 h-4" />
               </a>
             </div>
