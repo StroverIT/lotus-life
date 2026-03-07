@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpRight, Sparkles } from "lucide-react";
+import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpRight, Sparkles, Filter } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
@@ -78,11 +85,33 @@ const UserPanel = () => {
     );
   }, [prefersReducedMotion]);
 
+  type VisitFilterType = "all" | "event" | "schedule";
+  const [visitFilter, setVisitFilter] = useState<VisitFilterType>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("");
+
+  const filteredVisits = useMemo(() => {
+    let list = account?.visits ?? [];
+    if (visitFilter === "event") list = list.filter((v) => v.type === "EVENT");
+    else if (visitFilter === "schedule") list = list.filter((v) => v.type === "CLASS");
+    if (monthFilter) {
+      list = list.filter((v) => {
+        const d = new Date(v.date);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return key === monthFilter;
+      });
+    }
+    return list;
+  }, [account?.visits, visitFilter, monthFilter]);
+
   const grouped = useMemo(() => {
-    const g = groupByMonth(account?.visits ?? []);
-    // Sort months descending
+    const g = groupByMonth(filteredVisits);
     return Object.entries(g).sort(([a], [b]) => b.localeCompare(a));
-  }, [account]);
+  }, [filteredVisits]);
+
+  const allMonthKeys = useMemo(() => {
+    const g = groupByMonth(account?.visits ?? []);
+    return Object.keys(g).sort((a, b) => b.localeCompare(a));
+  }, [account?.visits]);
 
   useEffect(() => {
     let alive = true;
@@ -165,74 +194,133 @@ const UserPanel = () => {
                   </p>
                 </div>
               ) : (
-                grouped.map(([monthKey, visits]) => {
-                  const totalMin = visits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
-                  const hours = Math.floor(totalMin / 60);
-                  const mins = totalMin % 60;
-                  return (
-                    <div key={monthKey} className="mb-10">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-display text-2xl text-foreground">{formatMonthLabel(monthKey)}</h3>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground font-body">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {visits.length} visits
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {hours > 0 ? `${hours}h ` : ""}{mins > 0 ? `${mins}m` : ""}
-                          </span>
-                        </div>
-                      </div>
+                <>
+                  {/* Yoga visit type tabs: All / Event bookings / Schedule bookings */}
+                  <Tabs
+                    value={visitFilter}
+                    onValueChange={(v) => setVisitFilter(v as VisitFilterType)}
+                    className="mb-6"
+                  >
+                    <TabsList className="grid w-full grid-cols-3 mb-6">
+                      <TabsTrigger value="all" className="font-body">All</TabsTrigger>
+                      <TabsTrigger value="event" className="font-body">Event bookings</TabsTrigger>
+                      <TabsTrigger value="schedule" className="font-body">Schedule bookings</TabsTrigger>
+                    </TabsList>
 
-                      <div className="space-y-3">
-                        {visits.map((v) => (
-                          <div
-                            key={v.id}
-                            className="rounded-xl border border-border bg-card p-4 hover:border-primary/20 transition-colors"
-                          >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-display text-lg text-foreground truncate">{v.className}</h4>
-                                  <Badge
-                                    variant={v.type === "EVENT" ? "default" : "secondary"}
-                                    className={cn(
-                                      "text-[10px] uppercase tracking-wider shrink-0",
-                                      v.type === "EVENT" && "gradient-purple text-primary-foreground border-0"
-                                    )}
-                                  >
-                                    {v.type}
-                                  </Badge>
-                                </div>
-                                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground font-body">
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" />
-                                    {formatDate(v.date)}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-3 h-3" />
-                                    {v.duration}
-                                  </span>
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {v.hall}
-                                  </span>
-                                  {v.instructor && (
-                                    <span className="flex items-center gap-1">
-                                      <UserIcon className="w-3 h-3" />
-                                      {v.instructor}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
+                    {/* Month filter */}
+                    <div className="flex flex-wrap items-center gap-3 mb-6">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground font-body">
+                        <Filter className="w-4 h-4" />
+                        <span>Filter by month</span>
+                      </div>
+                      <Select value={monthFilter || "all"} onValueChange={(v) => setMonthFilter(v === "all" ? "" : v)}>
+                        <SelectTrigger className="w-[200px] font-body">
+                          <SelectValue placeholder="All months" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all" className="font-body">All months</SelectItem>
+                          {allMonthKeys.map((key) => (
+                            <SelectItem key={key} value={key} className="font-body">
+                              {formatMonthLabel(key)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {(visitFilter !== "all" || monthFilter) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-muted-foreground font-body"
+                          onClick={() => {
+                            setVisitFilter("all");
+                            setMonthFilter("");
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      )}
+                    </div>
+
+                  </Tabs>
+
+                  {filteredVisits.length === 0 ? (
+                    <div className="text-center py-10 rounded-xl border border-dashed border-border">
+                      <p className="text-muted-foreground font-body">
+                        No {visitFilter === "all" ? "visits" : visitFilter === "event" ? "event bookings" : "schedule bookings"}
+                        {monthFilter ? ` in ${formatMonthLabel(monthFilter)}` : ""}.
+                      </p>
+                    </div>
+                  ) : (
+                    grouped.map(([monthKey, visits]) => {
+                      const totalMin = visits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
+                      const hours = Math.floor(totalMin / 60);
+                      const mins = totalMin % 60;
+                      return (
+                        <div key={monthKey} className="mb-10">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-display text-2xl text-foreground">{formatMonthLabel(monthKey)}</h3>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground font-body">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {visits.length} {visits.length === 1 ? "visit" : "visits"}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {hours > 0 ? `${hours}h ` : ""}{mins > 0 ? `${mins}m` : ""}
+                              </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })
+
+                          <div className="space-y-3">
+                            {visits.map((v) => (
+                              <div
+                                key={v.id}
+                                className="rounded-xl border border-border bg-card p-4 hover:border-primary/20 transition-colors"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-display text-lg text-foreground truncate">{v.className}</h4>
+                                      <Badge
+                                        variant={v.type === "EVENT" ? "default" : "secondary"}
+                                        className={cn(
+                                          "text-[10px] uppercase tracking-wider shrink-0",
+                                          v.type === "EVENT" && "gradient-purple text-primary-foreground border-0"
+                                        )}
+                                      >
+                                        {v.type === "EVENT" ? "Event" : "Class"}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground font-body">
+                                      <span className="flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        {formatDate(v.date)}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {v.duration}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {v.hall}
+                                      </span>
+                                      {v.instructor && (
+                                        <span className="flex items-center gap-1">
+                                          <UserIcon className="w-3 h-3" />
+                                          {v.instructor}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </>
               )}
             </TabsContent>
 
