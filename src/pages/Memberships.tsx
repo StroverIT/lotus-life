@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { Check, Star, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Check, Star, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, XCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,9 +77,13 @@ const MembershipsPage = () => {
   const latestApplication = userMemberships.find(
     (a) => a.status === "SUCCESSFUL" || a.status === "PENDING"
   );
+  const latestApplicationAny = userMemberships[0];
   const currentMembershipId = latestApplication?.membershipId ?? null;
   const currentIdx = currentMembershipId ? plans.findIndex((p) => p.id === currentMembershipId) : -1;
   const isPending = latestApplication?.status === "PENDING";
+  const isSuccessful = latestApplication?.status === "SUCCESSFUL";
+  const isRejected = latestApplicationAny?.status === "REJECTED";
+  const rejectedPlanId = isRejected ? latestApplicationAny?.membershipId : null;
 
   const openSignup = (plan: Membership | null) => {
     setSelectedPlan(plan);
@@ -141,6 +145,8 @@ const MembershipsPage = () => {
                       plan.price.replace(/[^\d]/g, ""),
                     );
                     const isCurrent = plan.id === currentMembershipId;
+                    const isRejectedPlan = plan.id === rejectedPlanId;
+                    const isDisplayPlan = isCurrent || isRejectedPlan;
                     const isUpgrade = currentIdx >= 0 && idx === currentIdx + 1;
                     const isDowngrade = currentIdx >= 0 && idx === currentIdx - 1;
 
@@ -149,16 +155,34 @@ const MembershipsPage = () => {
                         key={plan.id}
                         className={cn(
                           "pp-card relative rounded-2xl p-8 flex flex-col",
-                          plan.highlighted && !isCurrent
+                          plan.highlighted && !isDisplayPlan
                             ? "is-popular gradient-purple text-primary-foreground shadow-2xl shadow-primary/20 scale-[1.02]"
                             : "border border-border bg-card",
-                          isCurrent && "border-2 border-primary shadow-lg shadow-primary/10",
+                          isCurrent && isSuccessful && "border-2 border-emerald-500 dark:border-emerald-600 shadow-lg shadow-emerald-500/10",
+                          isCurrent && isPending && "border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20",
+                          isRejectedPlan && "border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20",
                         )}
                       >
                         {isCurrent && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <Badge variant="outline" className="border-primary text-primary text-xs font-body">
-                              {isPending ? "Pending" : "Current plan"}
+                            {isPending ? (
+                              <Badge className="gap-1.5 border-0 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200 text-xs font-body font-medium">
+                                <Clock className="w-3.5 h-3.5" />
+                                Awaiting payment
+                              </Badge>
+                            ) : (
+                              <Badge className="gap-1.5 border-0 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200 text-xs font-body font-medium">
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                Current plan
+                              </Badge>
+                            )}
+                          </div>
+                        )}
+                        {isRejectedPlan && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <Badge className="gap-1.5 border-0 bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 text-xs font-body font-medium">
+                              <XCircle className="w-3.5 h-3.5" />
+                              Request rejected
                             </Badge>
                           </div>
                         )}
@@ -176,7 +200,7 @@ const MembershipsPage = () => {
                             </Badge>
                           </div>
                         )}
-                        {plan.badge && !isCurrent && !isUpgrade && !isDowngrade && (
+                        {plan.badge && !isDisplayPlan && !isUpgrade && !isDowngrade && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                             <span className="pp-badge flex items-center gap-1 px-4 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold font-body">
                               <Star className="w-3 h-3" /> {plan.badge}
@@ -197,7 +221,7 @@ const MembershipsPage = () => {
                           <span
                             className={cn(
                               "pp-priceUnit text-sm font-body ml-1",
-                              (plan.highlighted && !isCurrent)
+                              (plan.highlighted && !isDisplayPlan)
                                 ? "text-primary-foreground/70"
                                 : "text-muted-foreground",
                             )}
@@ -215,12 +239,12 @@ const MembershipsPage = () => {
                               <Check
                                 className={cn(
                                   "w-4 h-4 shrink-0 mt-0.5",
-                                  (plan.highlighted && !isCurrent) ? "text-accent" : "text-primary",
+                                  (plan.highlighted && !isDisplayPlan) ? "text-accent" : "text-primary",
                                 )}
                               />
                               <span
                                 className={
-                                  (plan.highlighted && !isCurrent)
+                                  (plan.highlighted && !isDisplayPlan)
                                     ? "text-primary-foreground/80"
                                     : "text-muted-foreground"
                                 }
@@ -232,14 +256,24 @@ const MembershipsPage = () => {
                         </ul>
 
                         {isCurrent ? (
-                          <Button
-                            type="button"
-                            disabled
-                            variant="outline"
-                            className="w-full border-primary text-primary"
-                          >
-                            {isPending ? "Pending" : "Current plan"}
-                          </Button>
+                          isPending ? (
+                            <p className="text-center text-sm text-muted-foreground font-body py-2">
+                              Pay by cash at the studio — we&apos;ll confirm when received.
+                            </p>
+                          ) : (
+                            <Button
+                              type="button"
+                              disabled
+                              variant="outline"
+                              className="w-full border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                            >
+                              Current plan
+                            </Button>
+                          )
+                        ) : isRejectedPlan ? (
+                          <p className="text-center text-sm text-muted-foreground font-body py-2">
+                            This request was not approved. You can choose another plan.
+                          </p>
                         ) : (
                           <Button
                             type="button"

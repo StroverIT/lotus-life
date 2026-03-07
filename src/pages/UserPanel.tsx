@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpRight, Sparkles, Filter } from "lucide-react";
+import { Calendar, Clock, MapPin, User as UserIcon, Star, ChevronRight, ArrowUpRight, Sparkles, Filter, CheckCircle, XCircle } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -168,6 +168,7 @@ const UserPanel = () => {
   const latestApplication = userMemberships.find(
     (a) => a.status === "SUCCESSFUL" || a.status === "PENDING"
   );
+  const latestApplicationAny = userMemberships[0];
   const applicationMembershipId = latestApplication?.membershipId ?? null;
   const applicationStatus = latestApplication?.status ?? null;
 
@@ -176,13 +177,23 @@ const UserPanel = () => {
   const currentIdx = currentPlan ? plans.findIndex((m) => m.id === currentPlan.id) : -1;
   const upgradePlan = currentIdx >= 0 && currentIdx < plans.length - 1 ? plans[currentIdx + 1] : null;
 
-  // Status for display: "Active" if from account or SUCCESSFUL, else "Pending"
-  const membershipStatusLabel =
-    accountMembershipId || applicationStatus === "SUCCESSFUL"
-      ? "Active"
-      : applicationStatus === "PENDING"
-        ? "Pending"
+  // Display plan/status for the top card (includes rejected)
+  const displayPlan =
+    accountMembershipId
+      ? plans.find((m) => m.id === accountMembershipId) ?? null
+      : latestApplicationAny
+        ? plans.find((m) => m.id === latestApplicationAny.membershipId) ?? null
         : null;
+  const displayStatus: "Active" | "Pending" | "Rejected" | null =
+    accountMembershipId || latestApplicationAny?.status === "SUCCESSFUL"
+      ? "Active"
+      : latestApplicationAny?.status === "PENDING"
+        ? "Pending"
+        : latestApplicationAny?.status === "REJECTED"
+          ? "Rejected"
+          : null;
+
+  const membershipStatusLabel = displayStatus;
 
   const sessionUser = session?.user;
   const displayName =
@@ -372,31 +383,72 @@ const UserPanel = () => {
 
             {/* ===== MEMBERSHIP TAB ===== */}
             <TabsContent value="membership">
-              {/* Current Plan (including pending) */}
-              {currentPlan ? (
+              {/* Current Plan (including pending and rejected) */}
+              {displayPlan ? (
                 <div className="mb-10">
-                  <h3 className="font-display text-2xl mb-4">Your {membershipStatusLabel === "Pending" ? "Requested" : "Current"} Plan</h3>
-                  <div className="rounded-2xl border-2 border-primary bg-card p-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
+                  <h3 className="font-display text-2xl mb-4">
+                    Your {membershipStatusLabel === "Pending" ? "Requested" : membershipStatusLabel === "Rejected" ? "Request" : "Current"} Plan
+                  </h3>
+                  <div
+                    className={cn(
+                      "rounded-2xl p-8 relative overflow-hidden",
+                      membershipStatusLabel === "Pending" &&
+                        "border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20",
+                      membershipStatusLabel === "Active" && "border-2 border-emerald-500 dark:border-emerald-600 bg-card",
+                      membershipStatusLabel === "Rejected" &&
+                        "border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20",
+                    )}
+                  >
+                    {membershipStatusLabel === "Active" && (
+                      <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-emerald-500/10 blur-3xl" />
+                    )}
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
-                        <Star className="w-5 h-5 text-primary" />
-                        <span className="text-xs text-primary font-semibold uppercase tracking-wider font-body">
-                          {membershipStatusLabel === "Pending" ? "Pending (pay by cash)" : "Active Plan"}
-                        </span>
+                        {membershipStatusLabel === "Pending" ? (
+                          <>
+                            <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold uppercase tracking-wider font-body">
+                              Awaiting payment
+                            </span>
+                          </>
+                        ) : membershipStatusLabel === "Rejected" ? (
+                          <>
+                            <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                            <span className="text-xs text-red-700 dark:text-red-300 font-semibold uppercase tracking-wider font-body">
+                              Request rejected
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold uppercase tracking-wider font-body">
+                              Active Plan
+                            </span>
+                          </>
+                        )}
                       </div>
-                      <h4 className="font-display text-3xl text-foreground mb-1">{currentPlan.name}</h4>
+                      <h4 className="font-display text-3xl text-foreground mb-1">{displayPlan.name}</h4>
                       <p className="text-primary font-display text-2xl mb-4">
-                        {currentPlan.price} <span className="text-muted-foreground text-sm font-body">/ {currentPlan.period}</span>
+                        {displayPlan.price} <span className="text-muted-foreground text-sm font-body">/ {displayPlan.period}</span>
                       </p>
                       <ul className="space-y-2">
-                        {currentPlan.features.map((f) => (
+                        {displayPlan.features.map((f) => (
                           <li key={f} className="flex items-center gap-2 text-sm font-body text-foreground">
                             <ChevronRight className="w-3.5 h-3.5 text-primary shrink-0" />
                             {f}
                           </li>
                         ))}
                       </ul>
+                      {membershipStatusLabel === "Pending" && (
+                        <p className="mt-4 text-sm text-muted-foreground font-body">
+                          Pay by cash at the studio — we&apos;ll confirm when received.
+                        </p>
+                      )}
+                      {membershipStatusLabel === "Rejected" && (
+                        <p className="mt-4 text-sm text-muted-foreground font-body">
+                          This request was not approved. You can choose another plan below.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -440,7 +492,7 @@ const UserPanel = () => {
               <h3 className="font-display text-2xl mb-6">All Plans</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {plans.map((plan, idx) => {
-                  const isActive = plan.id === currentMembershipId;
+                  const isDisplayPlan = plan.id === displayPlan?.id;
                   const isUpgrade = currentIdx >= 0 && idx === currentIdx + 1;
                   const isDowngrade = currentIdx >= 0 && idx === currentIdx - 1;
                   return (
@@ -448,17 +500,43 @@ const UserPanel = () => {
                       key={plan.id}
                       className={cn(
                         "rounded-xl border bg-card p-6 transition-all relative",
-                        isActive ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/20"
+                        isDisplayPlan && membershipStatusLabel === "Active" && "border-emerald-500 dark:border-emerald-600 shadow-lg shadow-emerald-500/10",
+                        isDisplayPlan && membershipStatusLabel === "Pending" && "border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10",
+                        isDisplayPlan && membershipStatusLabel === "Rejected" && "border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/10",
+                        !isDisplayPlan && "border-border hover:border-primary/20",
                       )}
                     >
-                      {plan.badge && !isUpgrade && !isDowngrade && (
+                      {plan.badge && !isUpgrade && !isDowngrade && !isDisplayPlan && (
                         <Badge className="absolute -top-2.5 left-4 gradient-purple text-primary-foreground border-0 text-[10px]">
                           {plan.badge}
                         </Badge>
                       )}
-                      {isActive && (
-                        <Badge variant="outline" className="absolute -top-2.5 right-4 border-primary text-primary text-[10px]">
-                          {membershipStatusLabel === "Pending" ? "Pending" : "Current"}
+                      {isDisplayPlan && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "absolute -top-2.5 right-4 text-[10px] gap-1",
+                            membershipStatusLabel === "Pending" &&
+                              "border-amber-200 dark:border-amber-800 bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200",
+                            membershipStatusLabel === "Active" &&
+                              "border-emerald-500 dark:border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200",
+                            membershipStatusLabel === "Rejected" &&
+                              "border-red-200 dark:border-red-800 bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-200",
+                          )}
+                        >
+                          {membershipStatusLabel === "Pending" ? (
+                            <>
+                              <Clock className="w-3 h-3" /> Awaiting payment
+                            </>
+                          ) : membershipStatusLabel === "Rejected" ? (
+                            <>
+                              <XCircle className="w-3 h-3" /> Rejected
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-3 h-3" /> Current
+                            </>
+                          )}
                         </Badge>
                       )}
                       {isUpgrade && (
@@ -483,10 +561,20 @@ const UserPanel = () => {
                           </li>
                         ))}
                       </ul>
-                      {isActive ? (
-                        <Button variant="outline" className="w-full border-primary text-primary" disabled>
-                          {membershipStatusLabel === "Pending" ? "Pending" : "Current Plan"}
-                        </Button>
+                      {isDisplayPlan ? (
+                        membershipStatusLabel === "Pending" ? (
+                          <p className="text-center text-xs text-muted-foreground font-body py-1">
+                            Pay by cash at the studio — we&apos;ll confirm when received.
+                          </p>
+                        ) : membershipStatusLabel === "Rejected" ? (
+                          <p className="text-center text-xs text-muted-foreground font-body py-1">
+                            Request was not approved. You can choose another plan.
+                          </p>
+                        ) : (
+                          <Button variant="outline" className="w-full border-emerald-500 text-emerald-600 dark:text-emerald-400" disabled>
+                            Current Plan
+                          </Button>
+                        )
                       ) : (
                         <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
                           <Link href={isUpgrade ? "/memberships?upgrade=1" : isDowngrade ? "/memberships?downgrade=1" : "/memberships"}>
