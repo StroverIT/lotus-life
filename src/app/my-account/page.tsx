@@ -10,7 +10,7 @@ export default async function MyAccountPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/login?redirect=/my-account");
+    redirect("/login");
   }
 
   return <UserPanel />;
