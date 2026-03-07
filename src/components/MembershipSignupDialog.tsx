@@ -26,12 +26,15 @@ interface MembershipSignupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   plan: Membership | null;
+  /** Called after a membership request is successfully created (so the parent can refetch). */
+  onSuccess?: () => void;
 }
 
 export function MembershipSignupDialog({
   open,
   onOpenChange,
   plan,
+  onSuccess,
 }: MembershipSignupDialogProps) {
   const { data: session } = useSession();
   const [creating, setCreating] = useState(false);
@@ -93,6 +96,7 @@ export function MembershipSignupDialog({
           description: `Your request for ${plan.name} has been received. Payment is by cash only—we'll contact you to confirm.`,
         });
         onOpenChange(false);
+        onSuccess?.();
       }
     } finally {
       setCreating(false);
@@ -114,12 +118,13 @@ export function MembershipSignupDialog({
           });
           setGuestFormResetKey((k) => k + 1);
           onOpenChange(false);
+          onSuccess?.();
         }
       } finally {
         setGuestBusy(false);
       }
     },
-    [plan?.id, plan?.name, submitMembershipRequest, onOpenChange]
+    [plan?.id, plan?.name, submitMembershipRequest, onOpenChange, onSuccess]
   );
 
   if (session?.user) {

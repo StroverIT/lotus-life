@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, Star } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
+import { Check, Star, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { usePageFirstVisit } from "@/context/PageAnimationContext";
 import { useMembershipsAnimations } from "@/hooks/useMembershipsAnimations";
@@ -13,11 +15,19 @@ import type { Membership } from "@/types/catalog";
 
 const singleClassPrice = "€10";
 
+type UserMembershipApplication = {
+  id: string;
+  membershipId: string;
+  status: "PENDING" | "REJECTED" | "SUCCESSFUL";
+};
+
 const MembershipsPage = () => {
   const [contentLoaded, setContentLoaded] = useState(false);
   const [plans, setPlans] = useState<Membership[]>([]);
+  const [userMemberships, setUserMemberships] = useState<UserMembershipApplication[]>([]);
   const [signupOpen, setSignupOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Membership | null>(null);
+  const { data: session } = useSession();
 
   const shouldAnimate = usePageFirstVisit("memberships");
   const scope = useMembershipsAnimations(shouldAnimate);
@@ -44,6 +54,32 @@ const MembershipsPage = () => {
       alive = false;
     };
   }, []);
+
+  const refetchUserMemberships = useCallback(async () => {
+    if (!session?.user) return;
+    try {
+      const res = await fetch("/api/user-memberships");
+      const json = (await res.json()) as { applications?: UserMembershipApplication[] };
+      setUserMemberships(json.applications ?? []);
+    } catch {
+      setUserMemberships([]);
+    }
+  }, [session?.user]);
+
+  useEffect(() => {
+    if (!session?.user) {
+      setUserMemberships([]);
+      return;
+    }
+    refetchUserMemberships();
+  }, [session?.user, refetchUserMemberships]);
+
+  const latestApplication = userMemberships.find(
+    (a) => a.status === "SUCCESSFUL" || a.status === "PENDING"
+  );
+  const currentMembershipId = latestApplication?.membershipId ?? null;
+  const currentIdx = currentMembershipId ? plans.findIndex((p) => p.id === currentMembershipId) : -1;
+  const isPending = latestApplication?.status === "PENDING";
 
   const openSignup = (plan: Membership | null) => {
     setSelectedPlan(plan);
@@ -99,23 +135,48 @@ const MembershipsPage = () => {
             ) : (
               <>
                 <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                  {plans.map((plan) => {
+                  {plans.map((plan, idx) => {
                     const currency = plan.price.replace(/\d/g, "").trim() || "€";
                     const amount = Number(
                       plan.price.replace(/[^\d]/g, ""),
                     );
+                    const isCurrent = plan.id === currentMembershipId;
+                    const isUpgrade = currentIdx >= 0 && idx === currentIdx + 1;
+                    const isDowngrade = currentIdx >= 0 && idx === currentIdx - 1;
 
                     return (
                       <div
                         key={plan.id}
                         className={cn(
                           "pp-card relative rounded-2xl p-8 flex flex-col",
-                          plan.highlighted
+                          plan.highlighted && !isCurrent
                             ? "is-popular gradient-purple text-primary-foreground shadow-2xl shadow-primary/20 scale-[1.02]"
                             : "border border-border bg-card",
+                          isCurrent && "border-2 border-primary shadow-lg shadow-primary/10",
                         )}
                       >
-                        {plan.badge && (
+                        {isCurrent && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <Badge variant="outline" className="border-primary text-primary text-xs font-body">
+                              {isPending ? "Pending" : "Current plan"}
+                            </Badge>
+                          </div>
+                        )}
+                        {isUpgrade && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <Badge className="gap-1 gradient-purple text-primary-foreground border-0 text-xs font-body">
+                              <ArrowUpRight className="w-3 h-3" /> Upgrade
+                            </Badge>
+                          </div>
+                        )}
+                        {isDowngrade && (
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                            <Badge variant="secondary" className="text-xs font-body gap-1">
+                              <ArrowDownRight className="w-3 h-3" /> Downgrade
+                            </Badge>
+                          </div>
+                        )}
+                        {plan.badge && !isCurrent && !isUpgrade && !isDowngrade && (
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                             <span className="pp-badge flex items-center gap-1 px-4 py-1 rounded-full bg-accent text-accent-foreground text-xs font-semibold font-body">
                               <Star className="w-3 h-3" /> {plan.badge}
@@ -136,7 +197,7 @@ const MembershipsPage = () => {
                           <span
                             className={cn(
                               "pp-priceUnit text-sm font-body ml-1",
-                              plan.highlighted
+                              (plan.highlighted && !isCurrent)
                                 ? "text-primary-foreground/70"
                                 : "text-muted-foreground",
                             )}
@@ -154,12 +215,12 @@ const MembershipsPage = () => {
                               <Check
                                 className={cn(
                                   "w-4 h-4 shrink-0 mt-0.5",
-                                  plan.highlighted ? "text-accent" : "text-primary",
+                                  (plan.highlighted && !isCurrent) ? "text-accent" : "text-primary",
                                 )}
                               />
                               <span
                                 className={
-                                  plan.highlighted
+                                  (plan.highlighted && !isCurrent)
                                     ? "text-primary-foreground/80"
                                     : "text-muted-foreground"
                                 }
@@ -170,18 +231,31 @@ const MembershipsPage = () => {
                           ))}
                         </ul>
 
-                        <Button
-                          type="button"
-                          onClick={() => openSignup(plan)}
-                          className={cn(
-                            "pp-cta w-full",
-                            plan.highlighted
-                              ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-                              : "gradient-purple text-primary-foreground border-0 hover:opacity-90",
-                          )}
-                        >
-                          Get Started
-                        </Button>
+                        {isCurrent ? (
+                          <Button
+                            type="button"
+                            disabled
+                            variant="outline"
+                            className="w-full border-primary text-primary"
+                          >
+                            {isPending ? "Pending" : "Current plan"}
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            onClick={() => openSignup(plan)}
+                            className={cn(
+                              "pp-cta w-full",
+                              plan.highlighted && !isUpgrade && !isDowngrade
+                                ? "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+                                : "gradient-purple text-primary-foreground border-0 hover:opacity-90",
+                              isUpgrade && "gradient-purple text-primary-foreground border-0 hover:opacity-90",
+                              isDowngrade && "border-border bg-secondary hover:bg-secondary/80",
+                            )}
+                          >
+                            {isUpgrade ? "Upgrade" : isDowngrade ? "Downgrade" : "Get Started"}
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -205,6 +279,7 @@ const MembershipsPage = () => {
           open={signupOpen}
           onOpenChange={setSignupOpen}
           plan={selectedPlan}
+          onSuccess={refetchUserMemberships}
         />
       </div>
     </Layout>

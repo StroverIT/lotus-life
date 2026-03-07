@@ -40,6 +40,16 @@ type AccountResponse =
       visits: AccountVisit[];
     };
 
+type UserMembershipApplication = {
+  id: string;
+  membershipId: string;
+  membershipName: string;
+  membershipPrice: string;
+  membershipPeriod: string;
+  status: "PENDING" | "REJECTED" | "SUCCESSFUL";
+  createdAt: string;
+};
+
 function parseDuration(duration: string): number {
   const match = duration.match(/(\d+)/);
   return match ? parseInt(match[1], 10) : 0;
@@ -69,6 +79,7 @@ function formatDate(iso: string): string {
 const UserPanel = () => {
   const [account, setAccount] = useState<AccountResponse | null>(null);
   const [plans, setPlans] = useState<Membership[]>([]);
+  const [userMemberships, setUserMemberships] = useState<UserMembershipApplication[]>([]);
   const { data: session } = useSession();
 
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -133,10 +144,45 @@ const UserPanel = () => {
     };
   }, []);
 
-  const currentMembershipId = account?.kind === "user" ? account.membership?.id ?? null : null;
+  useEffect(() => {
+    if (account?.kind !== "user") return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/user-memberships");
+        const json = (await res.json()) as { applications?: UserMembershipApplication[] };
+        if (!alive) return;
+        setUserMemberships(json.applications ?? []);
+      } catch {
+        if (!alive) return;
+        setUserMemberships([]);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [account?.kind]);
+
+  // Display membership: User.membership (active) or latest SUCCESSFUL/PENDING UserMembership
+  const accountMembershipId = account?.kind === "user" ? account.membership?.id ?? null : null;
+  const latestApplication = userMemberships.find(
+    (a) => a.status === "SUCCESSFUL" || a.status === "PENDING"
+  );
+  const applicationMembershipId = latestApplication?.membershipId ?? null;
+  const applicationStatus = latestApplication?.status ?? null;
+
+  const currentMembershipId = accountMembershipId ?? applicationMembershipId;
   const currentPlan = plans.find((m) => m.id === currentMembershipId) || null;
   const currentIdx = currentPlan ? plans.findIndex((m) => m.id === currentPlan.id) : -1;
   const upgradePlan = currentIdx >= 0 && currentIdx < plans.length - 1 ? plans[currentIdx + 1] : null;
+
+  // Status for display: "Active" if from account or SUCCESSFUL, else "Pending"
+  const membershipStatusLabel =
+    accountMembershipId || applicationStatus === "SUCCESSFUL"
+      ? "Active"
+      : applicationStatus === "PENDING"
+        ? "Pending"
+        : null;
 
   const sessionUser = session?.user;
   const displayName =
@@ -326,16 +372,18 @@ const UserPanel = () => {
 
             {/* ===== MEMBERSHIP TAB ===== */}
             <TabsContent value="membership">
-              {/* Current Plan */}
+              {/* Current Plan (including pending) */}
               {currentPlan ? (
                 <div className="mb-10">
-                  <h3 className="font-display text-2xl mb-4">Your Current Plan</h3>
+                  <h3 className="font-display text-2xl mb-4">Your {membershipStatusLabel === "Pending" ? "Requested" : "Current"} Plan</h3>
                   <div className="rounded-2xl border-2 border-primary bg-card p-8 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
                         <Star className="w-5 h-5 text-primary" />
-                        <span className="text-xs text-primary font-semibold uppercase tracking-wider font-body">Active Plan</span>
+                        <span className="text-xs text-primary font-semibold uppercase tracking-wider font-body">
+                          {membershipStatusLabel === "Pending" ? "Pending (pay by cash)" : "Active Plan"}
+                        </span>
                       </div>
                       <h4 className="font-display text-3xl text-foreground mb-1">{currentPlan.name}</h4>
                       <p className="text-primary font-display text-2xl mb-4">
@@ -391,8 +439,10 @@ const UserPanel = () => {
               <Separator className="my-8" />
               <h3 className="font-display text-2xl mb-6">All Plans</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {plans.map((plan) => {
+                {plans.map((plan, idx) => {
                   const isActive = plan.id === currentMembershipId;
+                  const isUpgrade = currentIdx >= 0 && idx === currentIdx + 1;
+                  const isDowngrade = currentIdx >= 0 && idx === currentIdx - 1;
                   return (
                     <div
                       key={plan.id}
@@ -401,14 +451,24 @@ const UserPanel = () => {
                         isActive ? "border-primary shadow-lg shadow-primary/10" : "border-border hover:border-primary/20"
                       )}
                     >
-                      {plan.badge && (
+                      {plan.badge && !isUpgrade && !isDowngrade && (
                         <Badge className="absolute -top-2.5 left-4 gradient-purple text-primary-foreground border-0 text-[10px]">
                           {plan.badge}
                         </Badge>
                       )}
                       {isActive && (
                         <Badge variant="outline" className="absolute -top-2.5 right-4 border-primary text-primary text-[10px]">
-                          Current
+                          {membershipStatusLabel === "Pending" ? "Pending" : "Current"}
+                        </Badge>
+                      )}
+                      {isUpgrade && (
+                        <Badge className="absolute -top-2.5 right-4 gradient-purple text-primary-foreground border-0 text-[10px] gap-1">
+                          <ArrowUpRight className="w-3 h-3" /> Upgrade
+                        </Badge>
+                      )}
+                      {isDowngrade && (
+                        <Badge variant="secondary" className="absolute -top-2.5 right-4 text-[10px]">
+                          Downgrade
                         </Badge>
                       )}
                       <h4 className="font-display text-xl mt-2 mb-1">{plan.name}</h4>
@@ -425,11 +485,13 @@ const UserPanel = () => {
                       </ul>
                       {isActive ? (
                         <Button variant="outline" className="w-full border-primary text-primary" disabled>
-                          Current Plan
+                          {membershipStatusLabel === "Pending" ? "Pending" : "Current Plan"}
                         </Button>
                       ) : (
                         <Button asChild variant="outline" className="w-full border-primary text-primary hover:bg-primary/5">
-                          <Link href="/memberships">Choose Plan</Link>
+                          <Link href={isUpgrade ? "/memberships?upgrade=1" : isDowngrade ? "/memberships?downgrade=1" : "/memberships"}>
+                            {isUpgrade ? "Upgrade" : isDowngrade ? "Downgrade" : "Choose Plan"}
+                          </Link>
                         </Button>
                       )}
                     </div>
