@@ -147,8 +147,8 @@ const MembershipsPage = () => {
                     const isCurrent = plan.id === currentMembershipId;
                     const isRejectedPlan = plan.id === rejectedPlanId;
                     const isDisplayPlan = isCurrent || isRejectedPlan;
-                    const isUpgrade = currentIdx >= 0 && idx === currentIdx + 1;
-                    const isDowngrade = currentIdx >= 0 && idx === currentIdx - 1;
+                    const isUpgrade = currentIdx >= 0 && idx > currentIdx;
+                    const isDowngrade = currentIdx >= 0 && idx < currentIdx;
 
                     return (
                       <div

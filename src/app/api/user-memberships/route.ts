@@ -105,6 +105,25 @@ export async function POST(request: NextRequest) {
       guestPhone = phone;
     }
 
+    if (userId) {
+      const existingPending = await prisma.userMembership.findFirst({
+        where: { userId, status: "PENDING" },
+        orderBy: { createdAt: "desc" },
+      });
+      if (existingPending) {
+        await prisma.userMembership.update({
+          where: { id: existingPending.id },
+          data: {
+            membershipId,
+            guestName: null,
+            guestEmail: null,
+            guestPhone: null,
+          },
+        });
+        return NextResponse.json({ ok: true });
+      }
+    }
+
     await prisma.userMembership.create({
       data: {
         userId,

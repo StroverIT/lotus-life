@@ -493,8 +493,8 @@ const UserPanel = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {plans.map((plan, idx) => {
                   const isDisplayPlan = plan.id === displayPlan?.id;
-                  const isUpgrade = currentIdx >= 0 && idx === currentIdx + 1;
-                  const isDowngrade = currentIdx >= 0 && idx === currentIdx - 1;
+                  const isUpgrade = currentIdx >= 0 && idx > currentIdx;
+                  const isDowngrade = currentIdx >= 0 && idx < currentIdx;
                   return (
                     <div
                       key={plan.id}
