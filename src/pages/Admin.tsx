@@ -35,7 +35,7 @@ const AdminPage = () => {
   const { season, setSeason } = useTheme();
   const queryClient = useQueryClient();
 
-  const { data: schedule = [] } = useQuery({
+  const { data: schedule = [], isPending: scheduleLoading } = useQuery({
     queryKey: adminQueryKeys.schedule,
     queryFn: async () => {
       const res = await fetch("/api/schedule");
@@ -284,6 +284,7 @@ const AdminPage = () => {
             <TabsContent value="schedule" className="space-y-8">
               <AdminScheduleTab
                 schedule={schedule}
+                isLoading={scheduleLoading}
                 onAddClass={setAddClassDayIndex}
                 onDeleteClass={deleteClass}
               />
