@@ -29,6 +29,9 @@ const navLinks = [
   { label: "Contact", to: "/contact" },
 ];
 
+/** Only animate navbar on first load; skip on client-side navigation (Layout remounts per page). */
+let hasNavbarAnimated = false;
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -43,6 +46,8 @@ const Navbar = () => {
   useBookNowPulse();
 
   useEffect(() => {
+    if (hasNavbarAnimated) return;
+    hasNavbarAnimated = true;
     staggerChildren(
       shellRef.current,
       {

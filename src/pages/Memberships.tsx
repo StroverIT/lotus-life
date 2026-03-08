@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import Layout from "@/components/Layout";
@@ -23,13 +23,12 @@ type UserMembershipApplication = {
 const CATALOG_STALE_MS = 2 * 60 * 1000; // 2 minutes
 
 const MembershipsPage = () => {
-  const [contentLoaded, setContentLoaded] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Membership | null>(null);
   const { data: session } = useSession();
   const queryClient = useQueryClient();
 
-  const { data: plans = [] } = useQuery({
+  const { data: plans = [], isPending: plansLoading } = useQuery({
     queryKey: ["memberships"],
     queryFn: async () => {
       const res = await fetch("/api/memberships");
@@ -52,11 +51,6 @@ const MembershipsPage = () => {
 
   const shouldAnimate = usePageFirstVisit("memberships");
   const scope = useMembershipsAnimations(shouldAnimate);
-
-  useEffect(() => {
-    const t = setTimeout(() => setContentLoaded(true), 400);
-    return () => clearTimeout(t);
-  }, []);
 
   const refetchUserMemberships = () => {
     queryClient.invalidateQueries({ queryKey: ["user-memberships"] });
@@ -111,7 +105,7 @@ const MembershipsPage = () => {
         {/* Pricing */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            {!contentLoaded || plans.length === 0 ? (
+            {plansLoading || plans.length === 0 ? (
               <>
                 <div className="pp-grid grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                   {Array.from({ length: 3 }).map((_, i) => (

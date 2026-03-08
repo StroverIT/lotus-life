@@ -24,9 +24,8 @@ const CATALOG_STALE_MS = 2 * 60 * 1000; // 2 minutes
 const MassagePage = () => {
   const [selectedMassage, setSelectedMassage] = useState<Massage | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [contentLoaded, setContentLoaded] = useState(false);
 
-  const { data: massagesRaw = [] } = useQuery({
+  const { data: massagesRaw = [], isPending: massagesLoading } = useQuery({
     queryKey: ["massages"],
     queryFn: async () => {
       const res = await fetch("/api/massages");
@@ -66,11 +65,6 @@ const MassagePage = () => {
       clearPendingModal();
     }, 0);
   }, [pathname, getStoredModalData, clearPendingModal, massages]);
-
-  useEffect(() => {
-    const t = setTimeout(() => setContentLoaded(true), 400);
-    return () => clearTimeout(t);
-  }, []);
 
   const handleBook = (massage: Massage) => {
     setSelectedMassage(massage);
@@ -115,7 +109,7 @@ const MassagePage = () => {
         {/* Treatments */}
         <section className="py-20">
           <div className="container mx-auto px-4">
-            {!contentLoaded || massages.length === 0 ? (
+            {massagesLoading || massages.length === 0 ? (
               <>
                 <Skeleton className="h-10 w-48 mx-auto mb-4" />
                 <Skeleton className="h-4 w-96 mx-auto mb-14" />
