@@ -129,7 +129,7 @@ const Navbar = () => {
           <div ref={shellRef} className="flex items-center justify-between h-16 md:h-20 gap-6">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <LotusLogo className="w-24 h-36" />
+              <LotusLogo className="w-24 h-36 -ml-10" />
               <span className="font-display text-2xl md:text-3xl font-semibold text-gradient-purple -ml-5">
                 Lotus Life
               </span>
@@ -198,7 +198,7 @@ const Navbar = () => {
 
             {/* Mobile toggle */}
             <button
-            onClick={toggleMobileMenu}
+              onClick={toggleMobileMenu}
               className="lg:hidden p-2 text-foreground"
             >
               {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
