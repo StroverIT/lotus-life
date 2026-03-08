@@ -10,14 +10,14 @@ export default async function AdminPage() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect("/login?redirect=/admin");
+    redirect("/login");
   }
 
   const role = (session.user as any).role as string | undefined;
   const guest = (session.user as any).guest as boolean | undefined;
 
   if (guest) {
-    redirect("/login?redirect=/admin");
+    redirect("/login");
   }
 
   if (role !== "ADMIN") {
