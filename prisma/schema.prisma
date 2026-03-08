@@ -164,6 +164,7 @@ model MassageBooking {
   date       DateTime
   time       String
   duration   Int      // 30 or 60 minutes
+  status     String?  // "shown" | "didnt_show" | null
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

@@ -18,7 +18,7 @@ import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminThemeTab from "@/components/admin/AdminThemeTab";
 import { useTheme } from "@/context/ThemeContext";
 import type { DaySchedule, Membership, Massage, YogaClass, YogaEvent } from "@/types/catalog";
-import type { AdminUser, AdminVisit } from "@/components/admin/types";
+import type { AdminUser, AdminVisit, AdminMassageBookingRow } from "@/components/admin/types";
 
 const ADMIN_STALE_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -26,6 +26,7 @@ const adminQueryKeys = {
   schedule: ["admin", "schedule"] as const,
   events: ["admin", "events"] as const,
   massages: ["admin", "massages"] as const,
+  massageBookings: ["admin", "massage-bookings"] as const,
   memberships: ["admin", "memberships"] as const,
   users: ["admin", "users"] as const,
   visits: ["admin", "visits"] as const,
@@ -61,6 +62,16 @@ const AdminPage = () => {
       const res = await fetch("/api/massages");
       const json = await res.json();
       return json as Massage[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: massageBookings = [] } = useQuery({
+    queryKey: adminQueryKeys.massageBookings,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/massage-bookings");
+      const json = await res.json();
+      return json as AdminMassageBookingRow[];
     },
     staleTime: ADMIN_STALE_MS,
   });
@@ -222,6 +233,18 @@ const AdminPage = () => {
     }
   };
 
+  const updateMassageBookingStatus = async (bookingId: string, status: "shown" | "didnt_show" | null) => {
+    try {
+      await fetch(`/api/admin/massage-bookings/${bookingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.massageBookings });
+    }
+  };
+
   const handleAddClass = async (dayIndex: number, cls: YogaClass) => {
     const day = schedule[dayIndex]?.day;
     if (!day) return;
@@ -303,9 +326,11 @@ const AdminPage = () => {
             <TabsContent value="massages" className="space-y-6">
               <AdminMassagesTab
                 massages={massages}
+                massageBookings={massageBookings}
                 onAddTreatment={() => setShowCreateMassage(true)}
                 onEdit={setEditingMassage}
                 onDelete={deleteMassage}
+                onUpdateBookingStatus={updateMassageBookingStatus}
               />
             </TabsContent>
 

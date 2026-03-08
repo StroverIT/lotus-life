@@ -18,3 +18,18 @@ export type AdminVisit = {
   hall: string;
   instructor?: string | null;
 };
+
+export type AdminMassageBookingRow = {
+  id: string;
+  massageId: string;
+  massageName: string;
+  userId: string | null;
+  guestName: string | null;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  date: string;
+  time: string;
+  duration: number;
+  status: string | null;
+  createdAt: string;
+};
