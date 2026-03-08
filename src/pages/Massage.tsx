@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Clock, Check, ArrowRight, type LucideIcon } from "lucide-react";
@@ -18,11 +19,31 @@ import { useMassageAnimations } from "@/hooks/useMassageAnimations";
 import type { Massage } from "@/types/catalog";
 import { DEFAULT_MASSAGE_ICON, MASSAGE_ICON_MAP } from "@/lib/massageIconMap";
 
+const CATALOG_STALE_MS = 2 * 60 * 1000; // 2 minutes
+
 const MassagePage = () => {
-  const [massages, setMassages] = useState<Array<Massage & { icon: LucideIcon }>>([]);
   const [selectedMassage, setSelectedMassage] = useState<Massage | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [contentLoaded, setContentLoaded] = useState(false);
+
+  const { data: massagesRaw = [] } = useQuery({
+    queryKey: ["massages"],
+    queryFn: async () => {
+      const res = await fetch("/api/massages");
+      const json = await res.json();
+      return Array.isArray(json) ? (json as Massage[]) : [];
+    },
+    staleTime: CATALOG_STALE_MS,
+  });
+
+  const massages = useMemo(
+    () =>
+      massagesRaw.map((m) => ({
+        ...m,
+        icon: MASSAGE_ICON_MAP[m.iconKey] ?? DEFAULT_MASSAGE_ICON,
+      })),
+    [massagesRaw]
+  ) as Array<Massage & { icon: LucideIcon }>;
 
   const shouldAnimate = usePageFirstVisit("massage");
   const scope = useMassageAnimations(shouldAnimate);
@@ -49,29 +70,6 @@ const MassagePage = () => {
   useEffect(() => {
     const t = setTimeout(() => setContentLoaded(true), 400);
     return () => clearTimeout(t);
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/massages");
-        const data = (await res.json()) as Massage[];
-        if (!alive) return;
-        setMassages(
-          data.map((m) => ({
-            ...m,
-            icon: MASSAGE_ICON_MAP[m.iconKey] ?? DEFAULT_MASSAGE_ICON,
-          })),
-        );
-      } catch {
-        if (!alive) return;
-        setMassages([]);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
   }, []);
 
   const handleBook = (massage: Massage) => {

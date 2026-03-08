@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,35 @@ type UserMembershipApplication = {
   status: "PENDING" | "REJECTED" | "SUCCESSFUL";
 };
 
+const CATALOG_STALE_MS = 2 * 60 * 1000; // 2 minutes
+
 const MembershipsPage = () => {
   const [contentLoaded, setContentLoaded] = useState(false);
-  const [plans, setPlans] = useState<Membership[]>([]);
-  const [userMemberships, setUserMemberships] = useState<UserMembershipApplication[]>([]);
   const [signupOpen, setSignupOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Membership | null>(null);
   const { data: session } = useSession();
+  const queryClient = useQueryClient();
+
+  const { data: plans = [] } = useQuery({
+    queryKey: ["memberships"],
+    queryFn: async () => {
+      const res = await fetch("/api/memberships");
+      const json = await res.json();
+      return Array.isArray(json) ? (json as Membership[]) : [];
+    },
+    staleTime: CATALOG_STALE_MS,
+  });
+
+  const { data: userMemberships = [] } = useQuery({
+    queryKey: ["user-memberships", (session?.user as { id?: string })?.id ?? session?.user?.email],
+    queryFn: async () => {
+      const res = await fetch("/api/user-memberships");
+      const json = (await res.json()) as { applications?: UserMembershipApplication[] };
+      return json.applications ?? [];
+    },
+    enabled: !!session?.user,
+    staleTime: CATALOG_STALE_MS,
+  });
 
   const shouldAnimate = usePageFirstVisit("memberships");
   const scope = useMembershipsAnimations(shouldAnimate);
@@ -35,42 +58,9 @@ const MembershipsPage = () => {
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const plansRes = await fetch("/api/memberships");
-        const plansJson = await plansRes.json();
-        if (!alive) return;
-        setPlans(plansJson as Membership[]);
-      } catch {
-        if (!alive) return;
-        setPlans([]);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const refetchUserMemberships = useCallback(async () => {
-    if (!session?.user) return;
-    try {
-      const res = await fetch("/api/user-memberships");
-      const json = (await res.json()) as { applications?: UserMembershipApplication[] };
-      setUserMemberships(json.applications ?? []);
-    } catch {
-      setUserMemberships([]);
-    }
-  }, [session?.user]);
-
-  useEffect(() => {
-    if (!session?.user) {
-      setUserMemberships([]);
-      return;
-    }
-    refetchUserMemberships();
-  }, [session?.user, refetchUserMemberships]);
+  const refetchUserMemberships = () => {
+    queryClient.invalidateQueries({ queryKey: ["user-memberships"] });
+  };
 
   const latestApplication = userMemberships.find(
     (a) => a.status === "SUCCESSFUL" || a.status === "PENDING"

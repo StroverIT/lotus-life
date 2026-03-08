@@ -1,6 +1,7 @@
  "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, parse } from "date-fns";
 import { Sun, Snowflake, Edit, Trash2, Plus, Clock, MapPin, User, Crown, Users, Mail, Phone, Calendar, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -42,14 +43,81 @@ type AdminVisit = {
   instructor?: string | null;
 };
 
+const ADMIN_STALE_MS = 2 * 60 * 1000; // 2 minutes
+
+const adminQueryKeys = {
+  schedule: ["admin", "schedule"] as const,
+  events: ["admin", "events"] as const,
+  massages: ["admin", "massages"] as const,
+  memberships: ["admin", "memberships"] as const,
+  users: ["admin", "users"] as const,
+  visits: ["admin", "visits"] as const,
+};
+
 const AdminPage = () => {
   const { season, setSeason } = useTheme();
-  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
-  const [events, setEvents] = useState<YogaEvent[]>([]);
-  const [massages, setMassages] = useState<Massage[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [visits, setVisits] = useState<AdminVisit[]>([]);
-  const [membershipPlans, setMembershipPlans] = useState<Membership[]>([]);
+  const queryClient = useQueryClient();
+
+  const { data: schedule = [] } = useQuery({
+    queryKey: adminQueryKeys.schedule,
+    queryFn: async () => {
+      const res = await fetch("/api/schedule");
+      const json = await res.json();
+      return json as DaySchedule[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: events = [] } = useQuery({
+    queryKey: adminQueryKeys.events,
+    queryFn: async () => {
+      const res = await fetch("/api/events");
+      const json = await res.json();
+      return json as YogaEvent[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: massages = [] } = useQuery({
+    queryKey: adminQueryKeys.massages,
+    queryFn: async () => {
+      const res = await fetch("/api/massages");
+      const json = await res.json();
+      return json as Massage[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: membershipPlans = [] } = useQuery({
+    queryKey: adminQueryKeys.memberships,
+    queryFn: async () => {
+      const res = await fetch("/api/memberships");
+      const json = await res.json();
+      return json as Membership[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: adminQueryKeys.users,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/users");
+      const json = await res.json();
+      return json as AdminUser[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: visits = [] } = useQuery({
+    queryKey: adminQueryKeys.visits,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/visits");
+      const json = await res.json();
+      return json as AdminVisit[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [selectedEventName, setSelectedEventName] = useState<string | null>(null);
   const [showAllUsers, setShowAllUsers] = useState(false);
@@ -60,51 +128,6 @@ const AdminPage = () => {
   const [addClassDayIndex, setAddClassDayIndex] = useState<number | null>(null);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [showCreateMembership, setShowCreateMembership] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const [scheduleRes, eventsRes, massagesRes, membershipsRes, usersRes, visitsRes] = await Promise.all([
-          fetch("/api/schedule"),
-          fetch("/api/events"),
-          fetch("/api/massages"),
-          fetch("/api/memberships"),
-          fetch("/api/admin/users"),
-          fetch("/api/admin/visits"),
-        ]);
-
-        const [scheduleJson, eventsJson, massagesJson, membershipsJson, usersJson, visitsJson] = await Promise.all([
-          scheduleRes.json(),
-          eventsRes.json(),
-          massagesRes.json(),
-          membershipsRes.json(),
-          usersRes.json(),
-          visitsRes.json(),
-        ]);
-
-        if (!alive) return;
-        setSchedule(scheduleJson as DaySchedule[]);
-        setEvents(eventsJson as YogaEvent[]);
-        setMassages(massagesJson as Massage[]);
-        setMembershipPlans(membershipsJson as Membership[]);
-        setUsers(usersJson as AdminUser[]);
-        setVisits(visitsJson as AdminVisit[]);
-      } catch {
-        if (!alive) return;
-        setSchedule([]);
-        setEvents([]);
-        setMassages([]);
-        setMembershipPlans([]);
-        setUsers([]);
-        setVisits([]);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   // Month selector state for users tab
   const availableMonths = useMemo(() => {
@@ -170,11 +193,7 @@ const AdminPage = () => {
     try {
       await fetch(`/api/schedule/classes/${classId}`, { method: "DELETE" });
     } finally {
-      setSchedule((prev) =>
-        prev.map((d, i) =>
-          i === dayIndex ? { ...d, classes: d.classes.filter((c) => c.id !== classId) } : d
-        )
-      );
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.schedule });
     }
   };
 
@@ -182,7 +201,7 @@ const AdminPage = () => {
     try {
       await fetch(`/api/events/${id}`, { method: "DELETE" });
     } finally {
-      setEvents((prev) => prev.filter((e) => e.id !== id));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.events });
     }
   };
 
@@ -190,7 +209,7 @@ const AdminPage = () => {
     try {
       await fetch(`/api/massages/${id}`, { method: "DELETE" });
     } finally {
-      setMassages((prev) => prev.filter((m) => m.id !== id));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.massages });
     }
   };
 
@@ -198,7 +217,7 @@ const AdminPage = () => {
     try {
       await fetch(`/api/memberships/${id}`, { method: "DELETE" });
     } finally {
-      setMembershipPlans((prev) => prev.filter((p) => p.id !== id));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.memberships });
     }
   };
 
@@ -210,7 +229,7 @@ const AdminPage = () => {
         body: JSON.stringify(updated),
       });
     } finally {
-      setMassages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.massages });
     }
   };
 
@@ -222,7 +241,7 @@ const AdminPage = () => {
         body: JSON.stringify(massage),
       });
     } finally {
-      setMassages((prev) => [...prev, massage]);
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.massages });
     }
   };
 
@@ -236,9 +255,7 @@ const AdminPage = () => {
         body: JSON.stringify({ day, cls }),
       });
     } finally {
-      setSchedule((prev) =>
-        prev.map((d, i) => (i === dayIndex ? { ...d, classes: [...d.classes, cls] } : d))
-      );
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.schedule });
     }
   };
 
@@ -250,7 +267,7 @@ const AdminPage = () => {
         body: JSON.stringify(event),
       });
     } finally {
-      setEvents((prev) => [...prev, event]);
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.events });
     }
   };
 
@@ -262,7 +279,7 @@ const AdminPage = () => {
         body: JSON.stringify(plan),
       });
     } finally {
-      setMembershipPlans((prev) => [...prev, plan]);
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.memberships });
     }
   };
 

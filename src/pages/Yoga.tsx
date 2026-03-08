@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { gsap } from "gsap";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,6 +29,8 @@ declare global {
   }
 }
 
+const CATALOG_STALE_MS = 2 * 60 * 1000; // 2 minutes
+
 type YogaPageProps = {
   initialSchedule?: DaySchedule[];
   initialEvents?: YogaEvent[];
@@ -35,8 +38,6 @@ type YogaPageProps = {
 
 const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
   const [selectedDay, setSelectedDay] = useState(0);
-  const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule ?? []);
-  const [events, setEvents] = useState<YogaEvent[]>(initialEvents ?? []);
   const [signupOpen, setSignupOpen] = useState(false);
   const [signupEvent, setSignupEvent] = useState<{
     name: string;
@@ -45,15 +46,76 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
     yogaClassId?: string;
     yogaEventId?: string;
   }>({ name: "" });
-  const [bookedClassIds, setBookedClassIds] = useState<Set<string>>(new Set());
-  const [bookedEventIds, setBookedEventIds] = useState<Set<string>>(new Set());
-  const hasInitialData = initialSchedule !== undefined && initialEvents !== undefined;
-  const [contentLoaded, setContentLoaded] = useState(hasInitialData);
+  const prevSignupOpenRef = useRef(signupOpen);
+
+  const queryClient = useQueryClient();
+
+  const { data: schedule = [] } = useQuery({
+    queryKey: ["schedule"],
+    queryFn: async () => {
+      const res = await fetch("/api/schedule");
+      const json = await res.json();
+      return Array.isArray(json) ? (json as DaySchedule[]) : [];
+    },
+    initialData: initialSchedule,
+    staleTime: CATALOG_STALE_MS,
+  });
+
+  const { data: events = [] } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const res = await fetch("/api/events");
+      const json = await res.json();
+      return Array.isArray(json) ? (json as YogaEvent[]) : [];
+    },
+    initialData: initialEvents,
+    staleTime: CATALOG_STALE_MS,
+  });
+
+  const { data: session } = useSession();
+
+  const { data: scheduleBookingsData } = useQuery({
+    queryKey: ["schedule-bookings", (session?.user as { id?: string })?.id ?? session?.user?.email],
+    queryFn: async () => {
+      const res = await fetch("/api/schedule-bookings");
+      const json = (await res.json()) as { yogaClassIds?: string[] };
+      return json.yogaClassIds ?? [];
+    },
+    enabled: !!session?.user,
+    staleTime: CATALOG_STALE_MS,
+  });
+
+  const { data: eventBookingsData } = useQuery({
+    queryKey: ["event-bookings", (session?.user as { id?: string })?.id ?? session?.user?.email],
+    queryFn: async () => {
+      const res = await fetch("/api/event-bookings");
+      const json = (await res.json()) as { yogaEventIds?: string[] };
+      return json.yogaEventIds ?? [];
+    },
+    enabled: !!session?.user,
+    staleTime: CATALOG_STALE_MS,
+  });
+
+  const bookedClassIds = session?.user
+    ? new Set(scheduleBookingsData ?? [])
+    : new Set(getYogaGuestSignups().yogaClassIds);
+  const bookedEventIds = session?.user
+    ? new Set(eventBookingsData ?? [])
+    : new Set(getYogaGuestSignups().yogaEventIds);
+
+  useEffect(() => {
+    if (prevSignupOpenRef.current && !signupOpen) {
+      queryClient.invalidateQueries({ queryKey: ["schedule-bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["event-bookings"] });
+    }
+    prevSignupOpenRef.current = signupOpen;
+  }, [signupOpen, queryClient]);
+
+  const contentLoaded = schedule !== undefined && events !== undefined;
 
   const shouldAnimate = usePageFirstVisit("yoga");
   const scope = useYogaAnimations(shouldAnimate);
   const pathname = usePathname();
-  const { data: session } = useSession();
   const { getStoredModalData, clearPendingModal } = usePendingModal();
   const eventSignupRef = useRef<EventSignupDialogHandle>(null);
 
@@ -74,80 +136,6 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
       clearPendingModal();
     }, 0);
   }, [pathname, getStoredModalData, clearPendingModal]);
-
-  useEffect(() => {
-    if (initialSchedule !== undefined) setSchedule(initialSchedule);
-    if (initialEvents !== undefined) setEvents(initialEvents);
-    if (hasInitialData) setContentLoaded(true);
-  }, [initialSchedule, initialEvents, hasInitialData]);
-
-  useEffect(() => {
-    if (hasInitialData) return;
-    let alive = true;
-    const opts: RequestInit = { cache: "no-store" };
-    (async () => {
-      try {
-        const [scheduleRes, eventsRes] = await Promise.all([
-          fetch("/api/schedule", opts),
-          fetch("/api/events", opts),
-        ]);
-        const [scheduleJson, eventsJson] = await Promise.all([
-          scheduleRes.json().catch(() => null),
-          eventsRes.json().catch(() => null),
-        ]);
-        if (!alive) return;
-        const nextSchedule =
-          scheduleRes.ok && Array.isArray(scheduleJson)
-            ? (scheduleJson as DaySchedule[])
-            : [];
-        const nextEvents =
-          eventsRes.ok && Array.isArray(eventsJson)
-            ? (eventsJson as YogaEvent[])
-            : [];
-        setSchedule(nextSchedule);
-        setEvents(nextEvents);
-      } catch {
-        if (!alive) return;
-        setSchedule([]);
-        setEvents([]);
-      } finally {
-        if (alive) setContentLoaded(true);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [hasInitialData]);
-
-  useEffect(() => {
-    if (!session?.user) {
-      const guest = getYogaGuestSignups();
-      setBookedClassIds(new Set(guest.yogaClassIds));
-      setBookedEventIds(new Set(guest.yogaEventIds));
-      return;
-    }
-    let alive = true;
-    (async () => {
-      try {
-        const [classRes, eventRes] = await Promise.all([
-          fetch("/api/schedule-bookings"),
-          fetch("/api/event-bookings"),
-        ]);
-        const classData = (await classRes.json()) as { yogaClassIds?: string[] };
-        const eventData = (await eventRes.json()) as { yogaEventIds?: string[] };
-        if (!alive) return;
-        setBookedClassIds(new Set(classData.yogaClassIds ?? []));
-        setBookedEventIds(new Set(eventData.yogaEventIds ?? []));
-      } catch {
-        if (!alive) return;
-        setBookedClassIds(new Set());
-        setBookedEventIds(new Set());
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [session?.user, signupOpen]);
 
   const hasSchedule = schedule && schedule.length > 0;
   const currentDayIndex = hasSchedule
