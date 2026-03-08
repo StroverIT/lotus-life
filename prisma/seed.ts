@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { PrismaClient, type AuthType, type UserRole, type VisitType } from "@prisma/client";
+import { PrismaClient, type AuthType, type UserRole } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -69,20 +69,6 @@ type SeedUser = {
   authType: AuthType;
 };
 
-type SeedVisit = {
-  id: string;
-  userId?: string | null;
-  date: string;
-  className: string;
-  type: VisitType;
-  duration: string;
-  hall: string;
-  instructor?: string | null;
-  guestName?: string | null;
-  guestEmail?: string | null;
-  guestPhone?: string | null;
-};
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const seedDir = path.join(__dirname, "seed-data");
@@ -104,7 +90,6 @@ async function main() {
   const weeklySchedule = await loadJson<SeedDaySchedule[]>("weeklySchedule.json");
   const yogaEvents = await loadJson<SeedYogaEvent[]>("yogaEvents.json");
   const users = await loadJson<SeedUser[]>("users.json");
-  const visits = await loadJson<SeedVisit[]>("visits.json");
 
   await prisma.membership.createMany({
     data: memberships.map((m) => ({
@@ -196,23 +181,6 @@ async function main() {
       joinedAt: parseDate(u.joinedAt ?? null),
       totalVisits: u.totalVisits ?? 0,
       lastVisit: parseDate(u.lastVisit ?? null),
-    })),
-    skipDuplicates: true,
-  });
-
-  await prisma.visit.createMany({
-    data: visits.map((v) => ({
-      id: v.id,
-      userId: v.userId ?? null,
-      date: new Date(v.date),
-      className: v.className,
-      type: v.type,
-      duration: v.duration,
-      hall: v.hall,
-      instructor: v.instructor ?? null,
-      guestName: v.guestName ?? null,
-      guestEmail: v.guestEmail ?? null,
-      guestPhone: v.guestPhone ?? null,
     })),
     skipDuplicates: true,
   });

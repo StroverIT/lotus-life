@@ -37,14 +37,10 @@ export async function GET() {
 
     const userId = prismaUser.id;
 
-    const [user, visitRows, scheduleBookings, eventBookings] = await Promise.all([
+    const [user, scheduleBookings, eventBookings] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
         include: { membership: true },
-      }),
-      prisma.visit.findMany({
-        where: { userId },
-        orderBy: { date: "desc" },
       }),
       prisma.scheduleBooking.findMany({
         where: { userId },
@@ -55,18 +51,6 @@ export async function GET() {
         include: { yogaEvent: true },
       }),
     ]);
-
-    const fromVisitTable: VisitShape[] = visitRows.map((v) =>
-      toVisitShape({
-        id: v.id,
-        date: v.date,
-        className: v.className,
-        type: v.type,
-        duration: v.duration,
-        hall: v.hall,
-        instructor: v.instructor ?? null,
-      })
-    );
 
     const fromScheduleBookings: VisitShape[] = scheduleBookings.map((b) =>
       toVisitShape({
@@ -92,7 +76,7 @@ export async function GET() {
       })
     );
 
-    const visits: VisitShape[] = [...fromVisitTable, ...fromScheduleBookings, ...fromEventBookings].sort(
+    const visits: VisitShape[] = [...fromScheduleBookings, ...fromEventBookings].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
 

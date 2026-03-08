@@ -17,11 +17,6 @@ enum AuthType {
   FACEBOOK
 }
 
-enum VisitType {
-  CLASS
-  EVENT
-}
-
 enum Season {
   summer
   winter
@@ -89,7 +84,6 @@ model User {
   totalVisits Int      @default(0)
   lastVisit   DateTime?
 
-  visits Visit[]
   massageBookings MassageBooking[]
   scheduleBookings ScheduleBooking[]
   eventBookings EventBooking[]
@@ -204,25 +198,6 @@ model EventBooking {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, yogaEventId])
-}
-
-model Visit {
-  id         String    @id
-  userId     String?
-  user       User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  date       DateTime
-  className  String
-  type       VisitType
-  duration   String
-  hall       String
-  instructor String?
-
-  guestName  String?
-  guestEmail String?
-  guestPhone String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model SiteSettings {

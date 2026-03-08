@@ -116,7 +116,6 @@ async function syncDatabase() {
     { name: "MassageBooking", fn: () => prismaTarget.massageBooking.deleteMany() },
     { name: "ScheduleBooking", fn: () => prismaTarget.scheduleBooking.deleteMany() },
     { name: "EventBooking", fn: () => prismaTarget.eventBooking.deleteMany() },
-    { name: "Visit", fn: () => prismaTarget.visit.deleteMany() },
     { name: "User", fn: () => prismaTarget.user.deleteMany() },
     { name: "VerificationToken", fn: () => prismaTarget.verificationToken.deleteMany() },
     { name: "Membership", fn: () => prismaTarget.membership.deleteMany() },
@@ -267,14 +266,6 @@ async function syncDatabase() {
       prismaTarget.eventBooking.createMany({ data: eventBookings })
     );
     if (r.ok) console.log("  EventBooking:", eventBookings.length);
-  }
-
-  const visits = await prismaSource.visit.findMany();
-  if (visits.length && !skipTables.has("Visit")) {
-    const r = await runOnTarget("Visit", () =>
-      prismaTarget.visit.createMany({ data: visits })
-    );
-    if (r.ok) console.log("  Visit:", visits.length);
   }
 
   if (skipTables.size) {
