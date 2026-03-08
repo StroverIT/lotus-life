@@ -74,7 +74,7 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
 
   const { data: session } = useSession();
 
-  const { data: scheduleBookingsData } = useQuery({
+  const { data: scheduleBookingsData, isPending: isScheduleBookingsPending } = useQuery({
     queryKey: ["schedule-bookings", (session?.user as { id?: string })?.id ?? session?.user?.email],
     queryFn: async () => {
       const res = await fetch("/api/schedule-bookings");
@@ -85,7 +85,7 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
     staleTime: CATALOG_STALE_MS,
   });
 
-  const { data: eventBookingsData } = useQuery({
+  const { data: eventBookingsData, isPending: isEventBookingsPending } = useQuery({
     queryKey: ["event-bookings", (session?.user as { id?: string })?.id ?? session?.user?.email],
     queryFn: async () => {
       const res = await fetch("/api/event-bookings");
@@ -95,6 +95,9 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
     enabled: !!session?.user,
     staleTime: CATALOG_STALE_MS,
   });
+
+  const showClassButtonSkeleton = !!session?.user && isScheduleBookingsPending;
+  const showEventButtonSkeleton = !!session?.user && isEventBookingsPending;
 
   const bookedClassIds = session?.user
     ? new Set(scheduleBookingsData ?? [])
@@ -287,20 +290,24 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
                               </span>
                             </div>
                           </div>
-                          <Button
-                            className="gradient-purple text-primary-foreground border-0 hover:opacity-90 shrink-0"
-                            onClick={() =>
-                              openSignup(
-                                cls.name,
-                                currentDay?.day,
-                                cls.time,
-                                cls.id,
-                              )
-                            }
-                            disabled={bookedClassIds.has(cls.id)}
-                          >
-                            {bookedClassIds.has(cls.id) ? "Already signed up" : "Sign Up"}
-                          </Button>
+                          {showClassButtonSkeleton ? (
+                            <Skeleton className="h-10 w-24 shrink-0 rounded-md" />
+                          ) : (
+                            <Button
+                              className="gradient-purple text-primary-foreground border-0 hover:opacity-90 shrink-0"
+                              onClick={() =>
+                                openSignup(
+                                  cls.name,
+                                  currentDay?.day,
+                                  cls.time,
+                                  cls.id,
+                                )
+                              }
+                              disabled={bookedClassIds.has(cls.id)}
+                            >
+                              {bookedClassIds.has(cls.id) ? "Already signed up" : "Sign Up"}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))
@@ -373,16 +380,20 @@ const YogaPage = ({ initialSchedule, initialEvents }: YogaPageProps) => {
                       {event.hall}
                     </span>
                   </div>
-                  <Button
-                    variant="outline"
-                    className="border-primary text-primary hover:bg-primary/5"
-                    onClick={() =>
-                      openSignup(event.name, event.dateLabel, event.time, undefined, event.id)
-                    }
-                    disabled={bookedEventIds.has(event.id)}
-                  >
-                    {bookedEventIds.has(event.id) ? "Already signed up" : <>Reserve Spot <ArrowRight className="w-4 h-4 ml-1" /></>}
-                  </Button>
+                  {showEventButtonSkeleton ? (
+                    <Skeleton className="h-10 w-32 rounded-md" />
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="border-primary text-primary hover:bg-primary/5"
+                      onClick={() =>
+                        openSignup(event.name, event.dateLabel, event.time, undefined, event.id)
+                      }
+                      disabled={bookedEventIds.has(event.id)}
+                    >
+                      {bookedEventIds.has(event.id) ? "Already signed up" : <>Reserve Spot <ArrowRight className="w-4 h-4 ml-1" /></>}
+                    </Button>
+                  )}
                 </div>
               ))}
                 </div>
