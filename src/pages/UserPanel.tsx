@@ -50,9 +50,31 @@ type UserMembershipApplication = {
   createdAt: string;
 };
 
-function parseDuration(duration: string): number {
-  const match = duration.match(/(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
+/** Parses duration string (e.g. "2 days", "60 min") into total minutes. */
+function parseDurationToMinutes(duration: string): number {
+  const d = duration.toLowerCase().trim();
+  const daysMatch = d.match(/(\d+)\s*day(s)?/);
+  if (daysMatch) return parseInt(daysMatch[1], 10) * 24 * 60;
+  const minMatch = d.match(/(\d+)\s*min/);
+  if (minMatch) return parseInt(minMatch[1], 10);
+  const hoursMatch = d.match(/(\d+)\s*h(?:our)?s?/);
+  if (hoursMatch) return parseInt(hoursMatch[1], 10) * 60;
+  const anyNum = d.match(/(\d+)/);
+  return anyNum ? parseInt(anyNum[1], 10) : 0;
+}
+
+/** Format total minutes as "X days Xh Xm" or "Xh Xm" or "Xm". */
+function formatTotalDuration(totalMinutes: number): string {
+  if (totalMinutes <= 0) return "0m";
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const remainder = totalMinutes % (24 * 60);
+  const hours = Math.floor(remainder / 60);
+  const mins = remainder % 60;
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days} ${days === 1 ? "day" : "days"}`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (mins > 0) parts.push(`${mins}m`);
+  return parts.join(" ");
 }
 
 function groupByMonth(visits: AccountVisit[]): Record<string, AccountVisit[]> {
@@ -309,9 +331,7 @@ const UserPanel = () => {
                     </div>
                   ) : (
                     grouped.map(([monthKey, visits]) => {
-                      const totalMin = visits.reduce((sum, v) => sum + parseDuration(v.duration), 0);
-                      const hours = Math.floor(totalMin / 60);
-                      const mins = totalMin % 60;
+                      const totalMinutes = visits.reduce((sum, v) => sum + parseDurationToMinutes(v.duration), 0);
                       return (
                         <div key={monthKey} className="mb-10">
                           <div className="flex items-center justify-between mb-4">
@@ -323,7 +343,7 @@ const UserPanel = () => {
                               </span>
                               <span className="flex items-center gap-1">
                                 <Clock className="w-4 h-4" />
-                                {hours > 0 ? `${hours}h ` : ""}{mins > 0 ? `${mins}m` : ""}
+                                {formatTotalDuration(totalMinutes)}
                               </span>
                             </div>
                           </div>
