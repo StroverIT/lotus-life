@@ -18,7 +18,12 @@ import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminThemeTab from "@/components/admin/AdminThemeTab";
 import { useTheme } from "@/context/ThemeContext";
 import type { DaySchedule, Membership, Massage, YogaClass, YogaEvent } from "@/types/catalog";
-import type { AdminUser, AdminVisit, AdminMassageBookingRow } from "@/components/admin/types";
+import type {
+  AdminUser,
+  AdminVisit,
+  AdminMassageBookingRow,
+  AdminUserMembershipRow,
+} from "@/components/admin/types";
 
 const ADMIN_STALE_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -28,6 +33,7 @@ const adminQueryKeys = {
   massages: ["admin", "massages"] as const,
   massageBookings: ["admin", "massage-bookings"] as const,
   memberships: ["admin", "memberships"] as const,
+  userMemberships: ["admin", "user-memberships"] as const,
   users: ["admin", "users"] as const,
   visits: ["admin", "visits"] as const,
 };
@@ -82,6 +88,16 @@ const AdminPage = () => {
       const res = await fetch("/api/memberships");
       const json = await res.json();
       return json as Membership[];
+    },
+    staleTime: ADMIN_STALE_MS,
+  });
+
+  const { data: userMembershipsList = [] } = useQuery({
+    queryKey: adminQueryKeys.userMemberships,
+    queryFn: async () => {
+      const res = await fetch("/api/admin/user-memberships");
+      const json = await res.json();
+      return json as AdminUserMembershipRow[];
     },
     staleTime: ADMIN_STALE_MS,
   });
@@ -283,6 +299,21 @@ const AdminPage = () => {
     }
   };
 
+  const updateUserMembershipStatus = async (
+    userMembershipId: string,
+    status: "PENDING" | "SUCCESSFUL" | "REJECTED"
+  ) => {
+    try {
+      await fetch(`/api/admin/user-memberships/${userMembershipId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: adminQueryKeys.userMemberships });
+    }
+  };
+
   return (
     <Layout>
       <section className="pt-28 pb-20">
@@ -337,8 +368,10 @@ const AdminPage = () => {
             <TabsContent value="memberships" className="space-y-6">
               <AdminMembershipsTab
                 membershipPlans={membershipPlans}
+                userMemberships={userMembershipsList}
                 onAddPlan={() => setShowCreateMembership(true)}
                 onDelete={deleteMembership}
+                onUpdateMembershipStatus={updateUserMembershipStatus}
               />
             </TabsContent>
 

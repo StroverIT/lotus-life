@@ -48,19 +48,25 @@ const AdminMassagesTab = ({
   return (
     <div className="space-y-6">
       <Tabs defaultValue="massages" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="massages" className="font-body">
+        <TabsList className="grid w-full max-w-md grid-cols-2 bg-primary/10 p-1 rounded-lg border border-primary/20">
+          <TabsTrigger
+            value="massages"
+            className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+          >
             Massages
           </TabsTrigger>
-          <TabsTrigger value="appointments" className="font-body">
+          <TabsTrigger
+            value="appointments"
+            className="font-body data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+          >
             Appointments
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="massages" className="space-y-6">
           <div className="flex justify-between items-center">
-            <h3 className="font-display text-2xl">Massage Treatments</h3>
-            <Button variant="outline" size="sm" onClick={onAddTreatment}>
+            <h3 className="font-display text-2xl text-foreground">Massage Treatments</h3>
+            <Button variant="default" size="sm" onClick={onAddTreatment} className="bg-primary hover:bg-primary/90">
               <Plus className="w-3.5 h-3.5 mr-1" /> Add Treatment
             </Button>
           </div>
@@ -68,36 +74,36 @@ const AdminMassagesTab = ({
             {massages.map((m) => (
               <div
                 key={m.id}
-                className="rounded-xl border border-border bg-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="rounded-xl border-2 border-primary/20 bg-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm hover:border-primary/40 hover:shadow-md transition-all"
               >
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="w-10 h-10 rounded-full gradient-purple flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl gradient-purple flex items-center justify-center shrink-0 shadow-md">
                     {(() => {
                       const Icon = MASSAGE_ICON_MAP[m.iconKey] ?? DEFAULT_MASSAGE_ICON;
-                      return <Icon className="w-5 h-5 text-primary-foreground" />;
+                      return <Icon className="w-6 h-6 text-primary-foreground" />;
                     })()}
                   </div>
                   <div>
-                    <h4 className="font-display text-xl mb-1">{m.name}</h4>
+                    <h4 className="font-display text-xl mb-1 text-foreground">{m.name}</h4>
                     <p className="text-muted-foreground text-sm font-body mb-2">{m.description}</p>
                     <div className="flex gap-4 text-sm font-body">
-                      <span>
+                      <span className="text-muted-foreground">
                         30 min: <span className="text-primary font-semibold">{m.price30}</span>
                       </span>
-                      <span>
+                      <span className="text-muted-foreground">
                         60 min: <span className="text-primary font-semibold">{m.price60}</span>
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex gap-1 shrink-0">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(m)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-primary hover:bg-primary/10" onClick={() => onEdit(m)}>
                     <Edit className="w-3.5 h-3.5" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => onDelete(m.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -109,7 +115,7 @@ const AdminMassagesTab = ({
         </TabsContent>
 
         <TabsContent value="appointments" className="space-y-6">
-          <h3 className="font-display text-2xl">Massage Appointments</h3>
+          <h3 className="font-display text-2xl text-foreground">Massage Appointments</h3>
           {sortedBookings.length === 0 ? (
             <p className="text-muted-foreground text-sm font-body py-8 text-center">
               No massage appointments
@@ -123,23 +129,25 @@ const AdminMassagesTab = ({
                 return (
                   <div
                     key={booking.id}
-                    className={`rounded-xl border border-border bg-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-opacity ${
-                      past ? "opacity-80" : ""
+                    className={`rounded-xl border-2 bg-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
+                      past
+                        ? "opacity-80 border-muted-foreground/20"
+                        : "border-primary/20 hover:border-primary/40 hover:shadow-md shadow-sm"
                     }`}
                   >
                     <div className="flex-1 space-y-2">
-                      <h4 className="font-display text-lg">{booking.massageName}</h4>
+                      <h4 className="font-display text-lg text-foreground">{booking.massageName}</h4>
                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground font-body">
                         <span className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" />
+                          <Calendar className="w-3.5 h-3.5 text-primary shrink-0" />
                           {booking.date}
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5" />
+                          <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
                           {booking.time} · {booking.duration} min
                         </span>
                         <span className="flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5" />
+                          <User className="w-3.5 h-3.5 text-primary shrink-0" />
                           {displayName}
                         </span>
                         {booking.guestEmail && (
@@ -160,15 +168,37 @@ const AdminMassagesTab = ({
                           )
                         }
                       >
-                        <SelectTrigger className="w-[140px] h-9">
+                        <SelectTrigger
+                          className={`w-[140px] h-9 font-medium border-2 ${
+                            booking.status === "shown"
+                              ? "border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400"
+                              : booking.status === "didnt_show"
+                                ? "border-destructive/50 bg-destructive/10 text-destructive"
+                                : "border-primary/40 bg-primary/10 text-primary"
+                          }`}
+                        >
                           <SelectValue placeholder="—" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">
                             <span className="text-muted-foreground">—</span>
                           </SelectItem>
-                          <SelectItem value="shown">Shown</SelectItem>
-                          <SelectItem value="didnt_show">Didn&apos;t show</SelectItem>
+                          <SelectItem
+                            value="shown"
+                            className="focus:bg-green-500/15 focus:text-green-800 dark:focus:text-green-300"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-green-500" /> Shown
+                            </span>
+                          </SelectItem>
+                          <SelectItem
+                            value="didnt_show"
+                            className="focus:bg-destructive/15 focus:text-destructive"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-destructive" /> Didn&apos;t show
+                            </span>
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

@@ -33,3 +33,20 @@ export type AdminMassageBookingRow = {
   status: string | null;
   createdAt: string;
 };
+
+export type AdminUserMembershipRow = {
+  id: string;
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  membershipId: string;
+  membershipName: string;
+  membershipPrice: string;
+  membershipPeriod: string;
+  status: string;
+  paymentMethod: string;
+  guestName: string | null;
+  guestEmail: string | null;
+  guestPhone: string | null;
+  createdAt: string;
+};
