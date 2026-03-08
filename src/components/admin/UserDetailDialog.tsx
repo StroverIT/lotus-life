@@ -93,7 +93,7 @@ const UserDetailDialog = ({ user, open, onOpenChange, visits, plans }: UserDetai
           </div>
           <div>
             <p className="text-muted-foreground text-xs">Joined</p>
-            <p>{user.joinedAt ?? "—"}</p>
+            <p>{user.joinedAt ? format(new Date(user.joinedAt), "MMM d, yyyy") : "—"}</p>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ const UserDetailDialog = ({ user, open, onOpenChange, visits, plans }: UserDetai
             <p className="text-xs text-muted-foreground font-body">Total Classes</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3 text-center">
-            <p className="font-display text-xl">{Math.round(totalAllClassMin / 60)}h {totalAllClassMin % 60}m</p>
+            <p className="font-display text-xl">{Math.floor(totalAllClassMin / 60)}h {totalAllClassMin % 60}m</p>
             <p className="text-xs text-muted-foreground font-body">Class Time</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3 text-center">
@@ -112,7 +112,7 @@ const UserDetailDialog = ({ user, open, onOpenChange, visits, plans }: UserDetai
             <p className="text-xs text-muted-foreground font-body">Total Events</p>
           </div>
           <div className="rounded-lg border border-border bg-card p-3 text-center">
-            <p className="font-display text-xl">{Math.round(totalAllEventMin / 60)}h {totalAllEventMin % 60}m</p>
+            <p className="font-display text-xl">{Math.floor(totalAllEventMin / 60)}h {totalAllEventMin % 60}m</p>
             <p className="text-xs text-muted-foreground font-body">Event Time</p>
           </div>
         </div>
