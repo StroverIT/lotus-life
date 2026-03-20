@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ReactNode } from "react";
+import { SubscriptionGate } from "@/components/SubscriptionGate";
 import { AppShellProviders } from "./providers";
 
 export const metadata: Metadata = {
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className="min-h-screen bg-background text-foreground">
-        <AppShellProviders>{children}</AppShellProviders>
+        <AppShellProviders>
+          <SubscriptionGate>{children}</SubscriptionGate>
+        </AppShellProviders>
       </body>
     </html>
   );
